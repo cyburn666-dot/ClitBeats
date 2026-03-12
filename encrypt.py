@@ -12,7 +12,7 @@ from cryptography.hazmat.primitives import hashes
 
 
 INPUT_DIR = Path("input")
-WEB_DIR = Path("web")
+WEB_DIR = Path("docs")
 ASSETS_DIR = WEB_DIR / "assets"
 MANIFEST_PATH = WEB_DIR / "manifest.json"
 
