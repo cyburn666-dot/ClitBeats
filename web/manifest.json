@@ -1,0 +1,121 @@
+{
+  "version": 1,
+  "kdf": {
+    "name": "PBKDF2",
+    "hash": "SHA-256",
+    "iterations": 200000,
+    "salt": "9aaef8cfe46bfce2a6422839af7869ec"
+  },
+  "tracks": [
+    {
+      "id": "t001",
+      "title": "勇者之歌-清唱",
+      "file": "assets/08543a614408ae0a6292cca7.bin",
+      "mime": "audio/mpeg",
+      "size": 1880017,
+      "data_nonce": "6d2b46dad17ee006f198e122",
+      "wrapped_dek": "35431ce958aaf5bbcdf369f8981e13d4836137b0a5c0059e7a3f27e6b7701a48531634d903ceb6aff3444a70f4f2fcb6",
+      "wrap_nonce": "08758bb005ff47b44956fe75"
+    },
+    {
+      "id": "t002",
+      "title": "勇者们之歌",
+      "file": "assets/f75823f23d05fa69b941f356.bin",
+      "mime": "audio/mpeg",
+      "size": 12772972,
+      "data_nonce": "b2f2498e87743639de1a9a77",
+      "wrapped_dek": "294a40ced4982ee80dc304e1ee14e045306e72b86fcf9879fbd112fa7e9b74bf8c262b11b9c1a2c16c44acdda5a2925f",
+      "wrap_nonce": "9220681dc3980fafd253d2df"
+    },
+    {
+      "id": "t003",
+      "title": "勇者们的歌-摇滚",
+      "file": "assets/e9a7c9ba9d3e8b28773606ab.bin",
+      "mime": "audio/mpeg",
+      "size": 10163862,
+      "data_nonce": "2e504aedcd48e10e5f9cf603",
+      "wrapped_dek": "a96e705a6640e0f51f2f894ffead0f9200cf7162cc16f90da1f3c7cae5f75580eecb89384eba5250c113e7df4fd2f0df",
+      "wrap_nonce": "7537d7d6893cdeec6e4dce50"
+    },
+    {
+      "id": "t004",
+      "title": "垃圾山-嘶吼",
+      "file": "assets/186474b6af68d76e2da1abeb.bin",
+      "mime": "audio/mpeg",
+      "size": 4231502,
+      "data_nonce": "588f8246a5abaefd9989c1cb",
+      "wrapped_dek": "8b56b04a4ed7c17b6806d78ee1951ba8d9f45c6352c66caba74d180d912d46e2aea4cb87bbc4a7426eb812c467c80649",
+      "wrap_nonce": "b33c64e63b204603f3bf2310"
+    },
+    {
+      "id": "t005",
+      "title": "垃圾山-雷鬼",
+      "file": "assets/e9737551d50f3d5c48aacd2b.bin",
+      "mime": "audio/mpeg",
+      "size": 2638078,
+      "data_nonce": "e27f73607bd00d60cab4d7d5",
+      "wrapped_dek": "4234004b01fe51394969b73bd56830d82989a4a69c4e6b6b0e56399ea4293c4ef9f904f20e6cf42beb68d7a196a3e3f6",
+      "wrap_nonce": "00560916934fa29569fce4d3"
+    },
+    {
+      "id": "t006",
+      "title": "生来如此",
+      "file": "assets/8c37c66aa2725abf34f15640.bin",
+      "mime": "audio/mpeg",
+      "size": 946309,
+      "data_nonce": "8ba09553fdd4edcaa3fe64b8",
+      "wrapped_dek": "1c5d53cd2ecd3b568281898ad5fcba618f3037a49abaa83c58572b52f92285abe55718541beff7092159da5cce74b442",
+      "wrap_nonce": "54639d4f843b01696dffdd9e"
+    },
+    {
+      "id": "t007",
+      "title": "祭女无-史诗",
+      "file": "assets/19f57487ef6bd1f66395f3cb.bin",
+      "mime": "audio/mpeg",
+      "size": 10392203,
+      "data_nonce": "a0ab9a58cf6e402034aba150",
+      "wrapped_dek": "0f76206bb086717ee4fd1d0f9d77bc637f21412d23696109685140489dfa5a140719a716cb89cb1bb44c41f515211da8",
+      "wrap_nonce": "6221cd8756d03ee3f76a8cde"
+    },
+    {
+      "id": "t008",
+      "title": "祭女无-愤怒",
+      "file": "assets/52642a12b22e5cd82b673d75.bin",
+      "mime": "audio/mpeg",
+      "size": 9540614,
+      "data_nonce": "7082f45c16a5998cacdef0c5",
+      "wrapped_dek": "084fec6b35e6be7230231666684d409bd62fde9ea11040fa033bfe02677f4821ee9ec4ae4dfe1fa536917e7bd9db4335",
+      "wrap_nonce": "751a992d90d8815e5f6496fd"
+    },
+    {
+      "id": "t009",
+      "title": "祭女无-慢版",
+      "file": "assets/b7e2fc3278489bcd46b3b0fe.bin",
+      "mime": "audio/mpeg",
+      "size": 10385210,
+      "data_nonce": "7022d6b9dd50f9784ba69a4b",
+      "wrapped_dek": "68f73027282c06b445b049c524e6a4c238e05032f622e2699d7c0f68fc970af8763b0ba876d2b8d0445226e90d470509",
+      "wrap_nonce": "5f2b1f7c72f10952da261c97"
+    },
+    {
+      "id": "t010",
+      "title": "致姐妹-清唱",
+      "file": "assets/0ed329b8fbdf3c2ce2bcaff3.bin",
+      "mime": "audio/mpeg",
+      "size": 3491590,
+      "data_nonce": "4247dd0b52bc3ab7c6536366",
+      "wrapped_dek": "770cbabe374acb10cc43958cb0bd603d117da73e9a9297514876b93bc40bc90c262336037f87be7ece75c41ec075c82d",
+      "wrap_nonce": "e9617cfe1ed2c889b76436fa"
+    },
+    {
+      "id": "t011",
+      "title": "风雪漫漫",
+      "file": "assets/7d3177e98c0d011ee7598024.bin",
+      "mime": "audio/mpeg",
+      "size": 8947602,
+      "data_nonce": "3e7752ec8d42f0e97c833035",
+      "wrapped_dek": "5183635e3cbdd110118d7db8989aa543b495c7dde80d3f652f37357876cb489dd71ab724231724bc72d2b21b0d61682a",
+      "wrap_nonce": "a0027b7cf2706b9a400c7792"
+    }
+  ]
+}
