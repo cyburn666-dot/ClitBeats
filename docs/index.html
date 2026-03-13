@@ -10,7 +10,7 @@
       --text: #222;
       --muted: #666;
       --bg: #fff;
-      --hover: #f5f5f5;
+      --hover: #f6f6f6;
       --active: #eef4ff;
     }
     * { box-sizing: border-box; }
@@ -21,8 +21,8 @@
       background: var(--bg);
     }
     .wrap {
-      max-width: 920px;
-      margin: 32px auto;
+      max-width: 1080px;
+      margin: 28px auto;
       padding: 0 16px;
     }
     .card {
@@ -30,6 +30,32 @@
       border-radius: 14px;
       padding: 18px;
       margin-bottom: 18px;
+    }
+    .top {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 18px;
+    }
+    .cover-box {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      background: #fafafa;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #cover {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: none;
+    }
+    #coverPlaceholder {
+      color: var(--muted);
+      font-size: 14px;
     }
     h1 {
       margin: 0 0 10px;
@@ -80,6 +106,34 @@
       margin-top: 10px;
       font-weight: 600;
     }
+    .lyrics-panel {
+      margin-top: 18px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      min-height: 280px;
+      max-height: 420px;
+      overflow: auto;
+      background: #fcfcfc;
+    }
+    .lyrics-title {
+      font-size: 14px;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+    .lyrics-plain {
+      white-space: pre-wrap;
+      line-height: 1.8;
+    }
+    .lrc-line {
+      padding: 6px 0;
+      color: #666;
+      transition: all 0.18s ease;
+    }
+    .lrc-line.active {
+      color: #111;
+      font-weight: 700;
+    }
     .list {
       list-style: none;
       margin: 0;
@@ -97,12 +151,8 @@
       border-top: 1px solid var(--border);
       background: #fff;
     }
-    .track:first-child {
-      border-top: none;
-    }
-    .track.active {
-      background: var(--active);
-    }
+    .track:first-child { border-top: none; }
+    .track.active { background: var(--active); }
     .track-title {
       overflow: hidden;
       text-overflow: ellipsis;
@@ -112,35 +162,57 @@
       color: var(--muted);
       font-size: 13px;
     }
-    .hidden {
-      display: none;
+    .badges {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 4px;
     }
-    @media (max-width: 640px) {
-      .track {
-        grid-template-columns: 56px 1fr;
-      }
-      .track button {
-        grid-column: 1 / -1;
-      }
+    .badge {
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 2px 8px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .hidden { display: none; }
+    @media (max-width: 760px) {
+      .top { grid-template-columns: 1fr; }
+      .track { grid-template-columns: 56px 1fr; }
+      .track button { grid-column: 1 / -1; }
     }
   </style>
 </head>
 <body>
   <div class="wrap">
     <div class="card">
-      <h1>Private Demo Playlist</h1>
-      <p>输入口令后可播放歌单中的单曲。页面不会一次性解密全部音频。</p>
+      <div class="top">
+        <div class="cover-box">
+          <img id="cover" alt="cover" />
+          <div id="coverPlaceholder">暂无封面</div>
+        </div>
 
-      <div class="row">
-        <input id="password" type="password" placeholder="输入口令" />
-        <button id="unlockBtn">验证口令</button>
-      </div>
+        <div>
+          <h1>Private Demo Playlist</h1>
+          <p>输入口令后解锁曲库。大文件密文不会因换口令而重传，口令只用于解开小索引。</p>
 
-      <div id="status" class="status">正在加载歌单…</div>
+          <div class="row">
+            <input id="password" type="password" placeholder="输入口令" />
+            <button id="unlockBtn">解锁</button>
+          </div>
 
-      <div class="player-box">
-        <audio id="player" controls preload="metadata"></audio>
-        <div id="nowPlaying" class="now-playing">未播放</div>
+          <div id="status" class="status">正在加载歌单…</div>
+
+          <div class="player-box">
+            <audio id="player" controls preload="metadata"></audio>
+            <div id="nowPlaying" class="now-playing">未播放</div>
+          </div>
+
+          <div class="lyrics-panel" id="lyricsPanel">
+            <div class="lyrics-title">歌词</div>
+            <div id="lyricsContent" class="lyrics-plain">暂无歌词</div>
+          </div>
+        </div>
       </div>
     </div>
 

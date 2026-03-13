@@ -32,6 +32,7 @@ SUPPORTED_EXTS = {
     ".flac": "audio/flac",
 }
 
+SUPPORTED_IMG = [".png",".PNG","jpg"]
 
 def derive_master_key(password: str, salt: bytes) -> bytes:
     kdf = PBKDF2HMAC(
@@ -50,6 +51,19 @@ def guess_mime(path: Path) -> str:
     guessed, _ = mimetypes.guess_type(path.name)
     return guessed or "application/octet-stream"
 
+def get_img_from_audio(path: Path) -> str:
+    for imgtype in SUPPORTED_IMG:
+        imgpath = path.with_suffix(imgtype)
+        if imgpath.exists(): return str(imgpath)
+    else:
+        return ""
+
+def get_lrc_from_audio(path: Path) -> str:
+    lrc_path = path.with_suffix('.lrc')
+    if lrc_path.exists():
+        return str(lrc_path)
+    else:
+        return ""
 
 def iter_audio_files(input_dir: Path) -> Iterable[Path]:
     for path in sorted(input_dir.iterdir()):
@@ -111,7 +125,9 @@ def encrypt_tracks(password: str):
 
         manifest["tracks"].append({
             "id": f"t{idx:03d}",
-            "title": path.stem,   # 若不想暴露真实歌名，可改成 Track 01 之类
+            "title": path.stem,
+            "img": get_img_from_audio(path),
+            "lrc": get_lrc_from_audio(path),
             "file": f"assets/{random_name}",
             "mime": guess_mime(path),
             "size": len(plain),
