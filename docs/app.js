@@ -877,6 +877,18 @@ nextBtn?.addEventListener("click", () => {
 // modeListBtn?.addEventListener("click", () => setPlayMode(PLAY_MODE.LIST));
 // modeShuffleBtn?.addEventListener("click", () => setPlayMode(PLAY_MODE.SHUFFLE));
 
+window.addEventListener("pagehide", async () => {
+  try {
+    const db = await openCacheDb();
+    const tx = db.transaction(SEGMENT_STORE, "readwrite");
+    const store = tx.objectStore(SEGMENT_STORE);
+    store.clear();
+  } catch (e) {
+    console.warn(e);
+    setStatus("清理缓存失败。");
+  }
+});
+
 (async function init() {
   try {
     topEl.classList.add("no-cover");
