@@ -18,7 +18,7 @@ const nextBtn = document.getElementById("nextBtn");
 // const modeListBtn = document.getElementById("modeListBtn");
 // const modeShuffleBtn = document.getElementById("modeShuffleBtn");
 const modeBtn = document.getElementById("modeBtn")
-const playModeLabelEl = document.getElementById("playModeLabel");
+// const playModeLabelEl = document.getElementById("playModeLabel");
 
 const MAX_CACHE_BYTES = 500 * 1024 * 1024;
 const TRIM_TO_BYTES = 380 * 1024 * 1024;
@@ -84,28 +84,28 @@ function updateCacheMeta() {
   cacheMetaEl.textContent = `缓存：${bytesToMB(state.cacheUsageBytes)} / ${bytesToMB(MAX_CACHE_BYTES)}`;
 }
 
-function updatePlayModeUI() {
-  if (!playModeLabelEl) return;
+// function updatePlayModeUI() {
+//   // if (!playModeLabelEl) return;
 
-  const mapping = {
-    [PLAY_MODE.SINGLE]: {
-      label: "播放模式：单曲循环"
-    },
-    [PLAY_MODE.LIST]: {
-      label: "播放模式：列表循环"
-    },
-    [PLAY_MODE.SHUFFLE]: {
-      label: "播放模式：随机播放"
-    },
-  };
+//   const mapping = {
+//     [PLAY_MODE.SINGLE]: {
+//       label: "播放模式：单曲循环"
+//     },
+//     [PLAY_MODE.LIST]: {
+//       label: "播放模式：列表循环"
+//     },
+//     [PLAY_MODE.SHUFFLE]: {
+//       label: "播放模式：随机播放"
+//     },
+//   };
 
-  const current = mapping[state.playMode];
-  playModeLabelEl.textContent = current.label;
+  // const current = mapping[state.playMode];
+  // playModeLabelEl.textContent = current.label;
 
   // [modeSingleBtn, modeListBtn, modeShuffleBtn].forEach((btn) => {
   //   btn?.classList.toggle("active", btn === current.activeBtn);
   // });
-}
+// }
 
 function setPlayMode(mode) {
   state.playMode = mode;
@@ -114,7 +114,7 @@ function setPlayMode(mode) {
   } else if (state.currentIndex >= 0) {
     state.shuffleHistory = [state.currentIndex];
   }
-  updatePlayModeUI();
+  // updatePlayModeUI();
 }
 
 function getTrackCount() {
@@ -839,7 +839,7 @@ player.addEventListener("ended", async () => {
 
   if (!state.unlocked || getTrackCount() === 0) return;
 
-  if (state.playMode === PLAY_MODE.LOOP_ONE) {
+  if (state.playMode === PLAY_MODE.SINGLE) {
 
     player.currentTime = 0;
     await player.play();
@@ -895,7 +895,7 @@ window.addEventListener("pagehide", async () => {
     coverEl.style.display = "none";
     coverContainer.style.display = "none";
     coverPlaceholderEl.style.display = "none";
-    updatePlayModeUI();
+    // updatePlayModeUI();
     state.db = await openCacheDb();
     await refreshCacheUsage();
 
