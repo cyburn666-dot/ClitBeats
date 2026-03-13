@@ -1,13 +1,17 @@
 const statusEl = document.getElementById("status");
+const audioInfo = document.getElementById("audioInfo");
 const cacheMetaEl = document.getElementById("cacheMeta");
 const trackListEl = document.getElementById("trackList");
 const passwordEl = document.getElementById("password");
 const unlockBtn = document.getElementById("unlockBtn");
 const player = document.getElementById("player");
 const nowPlayingEl = document.getElementById("nowPlaying");
+const topEl = document.querySelector(".top");
 const coverEl = document.getElementById("cover");
+const coverContainer = document.getElementById("coverContainer");
 const coverPlaceholderEl = document.getElementById("coverPlaceholder");
 const lyricsContentEl = document.getElementById("lyricsContent");
+const lyricsPanel = document.getElementById("lyricsPanel")
 const prevBtn = document.getElementById("prevBtn");
 const nextBtn = document.getElementById("nextBtn");
 // const modeSingleBtn = document.getElementById("modeSingleBtn");
@@ -50,6 +54,10 @@ const state = {
 
 function setStatus(text) {
   statusEl.textContent = text;
+}
+
+function setAudioInfo(text){
+  audioInfo.textContent = text;
 }
 
 function escapeHtml(str) {
@@ -419,8 +427,26 @@ function updateLyricsByTime(currentTime) {
     node.classList.toggle("active", i === active);
   });
 
+  // if (active >= 0 && nodes[active]) {
+  //   nodes[active].scrollIntoView({ block: "center", behavior: "smooth" });
+  // }
   if (active >= 0 && nodes[active]) {
-    nodes[active].scrollIntoView({ block: "center", behavior: "smooth" });
+    const node = nodes[active];
+    const container = lyricsPanel;
+
+    const nodeRect = node.getBoundingClientRect();
+    const containerRect = container.getBoundingClientRect();
+
+    const targetTop =
+      container.scrollTop +
+      (nodeRect.top - containerRect.top) -
+      container.clientHeight / 2 +
+      node.clientHeight / 2;
+
+    container.scrollTo({
+      top: Math.max(0, targetTop),
+      behavior: "smooth"
+    });
   }
 }
 
@@ -689,7 +715,8 @@ async function playTrackByIndex(index, { pushShuffleHistory = state.playMode ===
   if (!track || !track.audio) return;
 
   try {
-    setStatus(`正在准备：${meta.title}`);
+    // setStatus(`正在准备：${meta.title}`);
+    setStatus(`正在准备……`);
 
     const bundle = await getTrackBundle(meta.stem);
     applyCover(bundle.coverUrl);
@@ -702,14 +729,21 @@ async function playTrackByIndex(index, { pushShuffleHistory = state.playMode ===
     }
 
     markActiveTrack(index);
-    nowPlayingEl.textContent = `正在播放：${meta.title}`;
+    // nowPlayingEl.textContent = `正在播放：${meta.title}`;
+    // nowPlayingEl.textContent = `正在播放……`;
 
     try {
       await streamTrackWithMSE(track);
-      setStatus(`♪${meta.title}`);
+      setStatus('');
+      setAudioInfo(`♪${meta.title}`);
+      topEl.classList.remove("no-cover");
+      coverContainer.style.display = "flex";
     } catch (err) {
       console.warn("MSE 路径失败，回退整首拼接：", err);
-      setStatus(`♪${meta.title}`);
+      setStatus('');
+      setAudioInfo(`♪${meta.title}`);
+      topEl.classList.remove("no-cover");
+      coverContainer.style.display = "flex";
       await fallbackAssembleWholeTrack(track);
     }
 
@@ -845,6 +879,10 @@ nextBtn?.addEventListener("click", () => {
 
 (async function init() {
   try {
+    topEl.classList.add("no-cover");
+    coverEl.style.display = "none";
+    coverContainer.style.display = "none";
+    coverPlaceholderEl.style.display = "none";
     updatePlayModeUI();
     state.db = await openCacheDb();
     await refreshCacheUsage();

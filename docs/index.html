@@ -35,17 +35,23 @@
     }
     .top {
       display: grid;
-      grid-template-columns: 280px 1fr;
+      grid-template-columns: 280px minmax(0,1fr);
       gap: 18px;
     }
+    .top.no-cover {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .top.no-cover #coverContainer {
+      display: none;
+    }
+
     .cover-box {
       width: 100%;
       aspect-ratio: 1 / 1;
       border: 1px solid var(--border);
       border-radius: 14px;
       overflow: hidden;
-      background: #fafafa;
-      display: flex;
+      display: none;
       align-items: center;
       justify-content: center;
     }
@@ -70,13 +76,14 @@
     .row {
       display: flex;
       gap: 10px;
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
       align-items: center;
       margin-top: 12px;
     }
     input[type="password"] {
-      flex: 1 1 260px;
-      min-width: 220px;
+      /* flex: 1 1 260px; */
+      flex:auto;
+      min-width: 200px;
       padding: 10px 12px;
       border: 1px solid var(--border);
       border-radius: 10px;
@@ -114,7 +121,7 @@
       align-items: center;
       justify-content: space-between;
       gap: 12px;
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
       margin-top: 5px;
     }
     .action-group {
@@ -162,7 +169,7 @@
       padding: 14px;
       min-height: 280px;
       max-height: 420px;
-      overflow: auto;
+      overflow-y: auto;
       background: #fcfcfc;
     }
     .lyrics-title {
@@ -257,7 +264,7 @@
   <div class="wrap">
     <div class="card">
       <div class="top">
-        <div class="cover-box">
+        <div id ="coverContainer" class="cover-box">
           <img id="cover" alt="cover" />
           <div id="coverPlaceholder">暂无封面</div>
         </div>
@@ -271,7 +278,7 @@
             <button id="unlockBtn">解锁</button>
           </div>
 
-          <!-- <div id="status" class="status">正在加载歌单…</div> -->
+          <div id="status" class="status">正在加载歌单…</div>
           <div id="cacheMeta" class="meta">缓存：--</div>
 
           <div class="player-box">
@@ -281,7 +288,7 @@
               <!-- <div class="action-group transport-group"> -->
                 <button id="modeBtn" class="icon-btn" type="button" title="播放模式">🔁</button>
                 <button id="prevBtn" class="icon-btn" type="button" aria-label="上一首" title="上一首">▶️</button>
-                <div id="status" class="status">正在加载歌单…</div>
+                <div id="audioInfo" class="status"></div>
                 <button id="nextBtn" class="icon-btn" type="button" aria-label="下一首" title="下一首">▶️</button>
                 <button id="listBtn" class="icon-btn" type="button" title="列表查看">≡</button>
               <!-- </div> -->
