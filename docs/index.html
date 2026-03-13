@@ -12,6 +12,8 @@
       --bg: #fff;
       --hover: #f6f6f6;
       --active: #eef4ff;
+      --control-active: #111;
+      --control-bg: #f7f7f7;
     }
     * { box-sizing: border-box; }
     body {
@@ -96,11 +98,58 @@
       min-height: 24px;
       color: var(--muted);
     }
+    .meta {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 13px;
+    }
     .player-box {
       margin-top: 14px;
     }
     audio {
       width: 100%;
+    }
+    .player-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 5px;
+    }
+    .action-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: nowrap;
+    }
+    #nextBtn {
+      margin-left: auto;
+    }
+
+    .icon-btn {
+      min-width: 40px;
+      color: #222;
+      height: 40px;
+      padding: 0 6px;
+      border-radius: 12px;
+      background: var(--control-bg);
+      font-size: 20px;
+      line-height: 1;
+      display: inline-flex;
+      /* display: flex; */
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+    }
+    .mode-btn.active {
+      color: #fff;
+      background: var(--control-active);
+      border-color: var(--control-active);
+    }
+    .mode-label {
+      color: var(--muted);
+      font-size: 13px;
     }
     .now-playing {
       margin-top: 10px;
@@ -178,8 +227,29 @@
     .hidden { display: none; }
     @media (max-width: 760px) {
       .top { grid-template-columns: 1fr; }
-      .track { grid-template-columns: 56px 1fr; }
-      .track button { grid-column: 1 / -1; }
+      .track {
+        grid-template-columns: 44px 1fr auto;
+        align-items: center;
+        gap: 8px;
+      }
+      .track button {
+        grid-column: auto;
+        justify-self: end;
+        white-space: nowrap;
+        padding: 8px 10px;
+      }
+      .player-actions {
+        align-items: stretch;
+      }
+      .action-group {
+        width: 100%;
+      }
+      .action-group.mode-group {
+        justify-content: space-between;
+      }
+      .mode-label {
+        width: 100%;
+      }
     }
   </style>
 </head>
@@ -193,18 +263,30 @@
         </div>
 
         <div>
-          <h1>Private Demo Playlist</h1>
-          <p>输入口令后解锁曲库。大文件密文不会因换口令而重传，口令只用于解开小索引。</p>
+          <h1>Clit Beats Playlist</h1>
+          <!-- <p>音频按 2MB 以内分段加载与缓存，缓存达到约 500MB 时再清理到约 380MB。</p> -->
 
           <div class="row">
             <input id="password" type="password" placeholder="输入口令" />
             <button id="unlockBtn">解锁</button>
           </div>
 
-          <div id="status" class="status">正在加载歌单…</div>
+          <!-- <div id="status" class="status">正在加载歌单…</div> -->
+          <div id="cacheMeta" class="meta">缓存：--</div>
 
           <div class="player-box">
             <audio id="player" controls preload="metadata"></audio>
+
+            <div class="player-actions">
+              <!-- <div class="action-group transport-group"> -->
+                <button id="modeBtn" class="icon-btn" type="button" title="播放模式">🔁</button>
+                <button id="prevBtn" class="icon-btn" type="button" aria-label="上一首" title="上一首">▶️</button>
+                <div id="status" class="status">正在加载歌单…</div>
+                <button id="nextBtn" class="icon-btn" type="button" aria-label="下一首" title="下一首">▶️</button>
+                <button id="listBtn" class="icon-btn" type="button" title="列表查看">≡</button>
+              <!-- </div> -->
+            </div>
+
             <div id="nowPlaying" class="now-playing">未播放</div>
           </div>
 

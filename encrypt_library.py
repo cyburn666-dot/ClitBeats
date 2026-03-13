@@ -8,6 +8,7 @@ import secrets
 from pathlib import Path
 from typing import Optional
 
+
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives import hashes
@@ -20,7 +21,10 @@ CATALOG_PATH = DOCS_DIR / "catalog.json"
 MANIFEST_SEC_PATH = DOCS_DIR / "manifest.sec.json"
 
 PBKDF2_ITERATIONS = 200_000
-MANIFEST_VERSION = 1
+MANIFEST_VERSION = 2
+
+# 音频分片：每片不超过 2MB
+AUDIO_SEGMENT_MAX_BYTES = 2 * 1024 * 1024
 
 AUDIO_EXTS = {
     ".mp3": "audio/mpeg",
@@ -56,6 +60,10 @@ def b64d(text: str) -> bytes:
     return base64.b64decode(text.encode("ascii"))
 
 
+def sha256_bytes(data: bytes) -> str:
+    return hashlib.sha256(data).hexdigest()
+
+
 def sha256_file(path: Path) -> str:
     h = hashlib.sha256()
     with path.open("rb") as f:
@@ -79,14 +87,8 @@ def encrypt_bytes_aes_gcm(key: bytes, plain: bytes) -> dict:
     cipher = AESGCM(key).encrypt(nonce, plain, None)
     return {
         "nonce": b64e(nonce),
-        "ciphertext": b64e(cipher),
+        "ciphertext": cipher,
     }
-
-
-def decrypt_bytes_aes_gcm(key: bytes, payload: dict) -> bytes:
-    nonce = b64d(payload["nonce"])
-    ciphertext = b64d(payload["ciphertext"])
-    return AESGCM(key).decrypt(nonce, ciphertext, None)
 
 
 def encrypt_manifest_payload(payload: dict, password: str) -> dict:
@@ -105,7 +107,7 @@ def encrypt_manifest_payload(payload: dict, password: str) -> dict:
         "cipher": {
             "name": "AES-GCM",
             "nonce": enc["nonce"],
-            "ciphertext": enc["ciphertext"],
+            "ciphertext": b64e(enc["ciphertext"]),
         },
     }
 
@@ -129,7 +131,7 @@ def decrypt_manifest_payload(manifest_sec: dict, password: str) -> dict:
     return json.loads(plain.decode("utf-8"))
 
 
-def load_json(path: Path) -> Optional[dict]:
+def load_json(path: Path):
     if not path.exists():
         return None
     return json.loads(path.read_text(encoding="utf-8"))
@@ -186,32 +188,27 @@ def write_asset_cipher(cipher: bytes) -> str:
     return f"assets/{name}"
 
 
-def pack_asset(source_path: Path) -> dict:
+def pack_single_asset(source_path: Path) -> dict:
     plain = source_path.read_bytes()
     dek = secrets.token_bytes(32)
-    nonce = secrets.token_bytes(12)
-    cipher = AESGCM(dek).encrypt(nonce, plain, None)
-
-    rel_file = write_asset_cipher(cipher)
+    enc = encrypt_bytes_aes_gcm(dek, plain)
+    rel_file = write_asset_cipher(enc["ciphertext"])
 
     ext = source_path.suffix.lower()
-    if ext in AUDIO_EXTS:
-        mime = AUDIO_EXTS[ext]
-        kind = "audio"
-    elif ext in TEXT_EXTS:
+    if ext in TEXT_EXTS:
         mime = TEXT_EXTS[ext]
         kind = "text"
     elif ext in IMAGE_EXTS:
         mime = IMAGE_EXTS[ext]
         kind = "image"
     else:
-        raise ValueError(f"unsupported ext: {ext}")
+        raise ValueError(f"unsupported single asset ext: {ext}")
 
     return {
         "kind": kind,
         "file": rel_file,
         "mime": mime,
-        "nonce": b64e(nonce),
+        "nonce": enc["nonce"],
         "dek": b64e(dek),
         "size": len(plain),
         "source_name": source_path.name,
@@ -219,15 +216,59 @@ def pack_asset(source_path: Path) -> dict:
     }
 
 
-def reuse_or_pack_asset(existing_asset: Optional[dict], source_path: Optional[Path]) -> Optional[dict]:
+def split_bytes(data: bytes, max_size: int) -> list[bytes]:
+    return [data[i:i + max_size] for i in range(0, len(data), max_size)]
+
+
+def pack_audio_segments(source_path: Path) -> dict:
+    plain = source_path.read_bytes()
+    ext = source_path.suffix.lower()
+    mime = AUDIO_EXTS[ext]
+    source_hash = sha256_bytes(plain)
+
+    chunks = split_bytes(plain, AUDIO_SEGMENT_MAX_BYTES)
+    segments = []
+
+    for idx, chunk in enumerate(chunks):
+        dek = secrets.token_bytes(32)
+        enc = encrypt_bytes_aes_gcm(dek, chunk)
+        rel_file = write_asset_cipher(enc["ciphertext"])
+        segments.append({
+            "index": idx,
+            "file": rel_file,
+            "mime": mime,
+            "nonce": enc["nonce"],
+            "dek": b64e(dek),
+            "size": len(chunk),
+            "plain_hash": sha256_bytes(chunk),
+        })
+
+    return {
+        "kind": "audio-segmented",
+        "mime": mime,
+        "segment_max_bytes": AUDIO_SEGMENT_MAX_BYTES,
+        "segment_count": len(segments),
+        "total_size": len(plain),
+        "source_name": source_path.name,
+        "source_hash": source_hash,
+        "segments": segments,
+    }
+
+
+def reuse_or_pack_single_asset(existing_asset: Optional[dict], source_path: Optional[Path]) -> Optional[dict]:
     if source_path is None:
         return None
-
     new_hash = sha256_file(source_path)
     if existing_asset and existing_asset.get("source_hash") == new_hash:
         return existing_asset
+    return pack_single_asset(source_path)
 
-    return pack_asset(source_path)
+
+def reuse_or_pack_audio(existing_audio: Optional[dict], source_path: Path) -> dict:
+    new_hash = sha256_file(source_path)
+    if existing_audio and existing_audio.get("source_hash") == new_hash:
+        return existing_audio
+    return pack_audio_segments(source_path)
 
 
 def build_library(password: str) -> None:
@@ -245,7 +286,6 @@ def build_library(password: str) -> None:
 
     new_catalog_tracks: list[dict] = []
     new_tracks_payload: dict[str, dict] = {}
-
     used_asset_files: set[str] = set()
 
     for stem in sorted(groups.keys()):
@@ -266,10 +306,10 @@ def build_library(password: str) -> None:
         txt_path = stem_files.get(".txt")
         cover_path = choose_cover_file(stem_files)
 
-        audio_asset = reuse_or_pack_asset(old_track_payload.get("audio"), audio_path)
-        lrc_asset = reuse_or_pack_asset(old_track_payload.get("lrc"), lrc_path)
-        txt_asset = reuse_or_pack_asset(old_track_payload.get("txt"), txt_path)
-        cover_asset = reuse_or_pack_asset(old_track_payload.get("cover"), cover_path)
+        audio_asset = reuse_or_pack_audio(old_track_payload.get("audio"), audio_path)
+        lrc_asset = reuse_or_pack_single_asset(old_track_payload.get("lrc"), lrc_path)
+        txt_asset = reuse_or_pack_single_asset(old_track_payload.get("txt"), txt_path)
+        cover_asset = reuse_or_pack_single_asset(old_track_payload.get("cover"), cover_path)
 
         new_catalog_tracks.append({
             "id": track_id,
@@ -278,6 +318,8 @@ def build_library(password: str) -> None:
             "has_lrc": lrc_asset is not None,
             "has_txt": txt_asset is not None,
             "has_cover": cover_asset is not None,
+            "segment_count": audio_asset["segment_count"],
+            "mime": audio_asset["mime"],
         })
 
         track_payload = {
@@ -290,19 +332,23 @@ def build_library(password: str) -> None:
         }
         new_tracks_payload[stem] = track_payload
 
-        for asset in (audio_asset, lrc_asset, txt_asset, cover_asset):
+        for seg in audio_asset["segments"]:
+            used_asset_files.add(seg["file"])
+        for asset in (lrc_asset, txt_asset, cover_asset):
             if asset and asset.get("file"):
                 used_asset_files.add(asset["file"])
 
     new_catalog = {
         "version": 1,
         "tracks": new_catalog_tracks,
+        "audio_segment_max_bytes": AUDIO_SEGMENT_MAX_BYTES,
     }
     save_json(CATALOG_PATH, new_catalog)
 
     new_payload = {
         "version": 1,
         "tracks": new_tracks_payload,
+        "audio_segment_max_bytes": AUDIO_SEGMENT_MAX_BYTES,
     }
     new_manifest_sec = encrypt_manifest_payload(new_payload, password)
     save_json(MANIFEST_SEC_PATH, new_manifest_sec)
@@ -356,6 +402,5 @@ def main():
 
 if __name__ == "__main__":
     main()
-
 # Running:
 # python encrypt_library.py build --password "口令"

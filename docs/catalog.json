@@ -1,0 +1,156 @@
+{
+  "version": 1,
+  "tracks": [
+    {
+      "id": "t016",
+      "stem": "Encourage",
+      "title": "Encourage",
+      "has_lrc": true,
+      "has_txt": false,
+      "has_cover": true,
+      "segment_count": 7,
+      "mime": "audio/mpeg"
+    },
+    {
+      "id": "t017",
+      "stem": "Encourage-摇滚",
+      "title": "Encourage-摇滚",
+      "has_lrc": true,
+      "has_txt": true,
+      "has_cover": true,
+      "segment_count": 5,
+      "mime": "audio/mpeg"
+    },
+    {
+      "id": "t018",
+      "stem": "Encourage-清唱",
+      "title": "Encourage-清唱",
+      "has_lrc": true,
+      "has_txt": false,
+      "has_cover": true,
+      "segment_count": 1,
+      "mime": "audio/mpeg"
+    },
+    {
+      "id": "t019",
+      "stem": "ForHer",
+      "title": "ForHer",
+      "has_lrc": true,
+      "has_txt": false,
+      "has_cover": true,
+      "segment_count": 2,
+      "mime": "audio/mpeg"
+    },
+    {
+      "id": "t027",
+      "stem": "ForHer-清唱",
+      "title": "ForHer-清唱",
+      "has_lrc": true,
+      "has_txt": false,
+      "has_cover": true,
+      "segment_count": 2,
+      "mime": "audio/mpeg"
+    },
+    {
+      "id": "t020",
+      "stem": "刀笔续雌篇-史诗",
+      "title": "刀笔续雌篇-史诗",
+      "has_lrc": true,
+      "has_txt": false,
+      "has_cover": true,
+      "segment_count": 5,
+      "mime": "audio/mpeg"
+    },
+    {
+      "id": "t021",
+      "stem": "刀笔续雌篇-愤怒",
+      "title": "刀笔续雌篇-愤怒",
+      "has_lrc": true,
+      "has_txt": false,
+      "has_cover": true,
+      "segment_count": 5,
+      "mime": "audio/mpeg"
+    },
+    {
+      "id": "t022",
+      "stem": "刀笔续雌篇-慢版",
+      "title": "刀笔续雌篇-慢版",
+      "has_lrc": true,
+      "has_txt": false,
+      "has_cover": true,
+      "segment_count": 5,
+      "mime": "audio/mpeg"
+    },
+    {
+      "id": "t007",
+      "stem": "女人，我们",
+      "title": "女人，我们",
+      "has_lrc": false,
+      "has_txt": true,
+      "has_cover": true,
+      "segment_count": 1,
+      "mime": "audio/mpeg"
+    },
+    {
+      "id": "t023",
+      "stem": "或可候野火-嘶吼",
+      "title": "或可候野火-嘶吼",
+      "has_lrc": true,
+      "has_txt": false,
+      "has_cover": true,
+      "segment_count": 3,
+      "mime": "audio/mpeg"
+    },
+    {
+      "id": "t024",
+      "stem": "或可候野火-摇滚",
+      "title": "或可候野火-摇滚",
+      "has_lrc": true,
+      "has_txt": false,
+      "has_cover": true,
+      "segment_count": 2,
+      "mime": "audio/mpeg"
+    },
+    {
+      "id": "t025",
+      "stem": "或可候野火-雷鬼",
+      "title": "或可候野火-雷鬼",
+      "has_lrc": true,
+      "has_txt": false,
+      "has_cover": true,
+      "segment_count": 2,
+      "mime": "audio/mpeg"
+    },
+    {
+      "id": "t008",
+      "stem": "月经棉要上火车",
+      "title": "月经棉要上火车",
+      "has_lrc": false,
+      "has_txt": true,
+      "has_cover": true,
+      "segment_count": 1,
+      "mime": "audio/mpeg"
+    },
+    {
+      "id": "t009",
+      "stem": "生来如此",
+      "title": "生来如此",
+      "has_lrc": false,
+      "has_txt": true,
+      "has_cover": true,
+      "segment_count": 1,
+      "mime": "audio/mpeg"
+    },
+    {
+      "id": "t026",
+      "stem": "长路寒霜凛",
+      "title": "长路寒霜凛",
+      "has_lrc": true,
+      "has_txt": false,
+      "has_cover": true,
+      "segment_count": 5,
+      "mime": "audio/mpeg"
+    }
+  ],
+  "audio_segment_max_bytes": 2097152
+}

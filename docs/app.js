@@ -1,4 +1,5 @@
 const statusEl = document.getElementById("status");
+const cacheMetaEl = document.getElementById("cacheMeta");
 const trackListEl = document.getElementById("trackList");
 const passwordEl = document.getElementById("password");
 const unlockBtn = document.getElementById("unlockBtn");
@@ -7,6 +8,29 @@ const nowPlayingEl = document.getElementById("nowPlaying");
 const coverEl = document.getElementById("cover");
 const coverPlaceholderEl = document.getElementById("coverPlaceholder");
 const lyricsContentEl = document.getElementById("lyricsContent");
+const prevBtn = document.getElementById("prevBtn");
+const nextBtn = document.getElementById("nextBtn");
+// const modeSingleBtn = document.getElementById("modeSingleBtn");
+// const modeListBtn = document.getElementById("modeListBtn");
+// const modeShuffleBtn = document.getElementById("modeShuffleBtn");
+const modeBtn = document.getElementById("modeBtn")
+const playModeLabelEl = document.getElementById("playModeLabel");
+
+const MAX_CACHE_BYTES = 500 * 1024 * 1024;
+const TRIM_TO_BYTES = 380 * 1024 * 1024;
+const PREFETCH_AHEAD_SEGMENTS = 2;
+const DB_NAME = "demo-stream-cache-v1";
+const SEGMENT_STORE = "segments";
+// const PLAY_MODES = {
+//   SINGLE: "single",
+//   LIST: "list",
+//   SHUFFLE: "shuffle",
+// };
+const PLAY_MODE = {
+  LIST: 0,
+  SINGLE: 1,
+  SHUFFLE: 2
+}
 
 const state = {
   catalog: null,
@@ -14,9 +38,14 @@ const state = {
   payload: null,
   unlocked: false,
   currentIndex: -1,
-  cache: new Map(), // stem -> { audioUrl, coverUrl, lrcText, txtText }
+  playMode: PLAY_MODE.LIST,
+  shuffleHistory: [],
+  trackBundleCache: new Map(), // stem -> { coverUrl, lrcText, txtText }
   currentLrc: [],
   currentLrcIndex: -1,
+  db: null,
+  streamSession: null,
+  cacheUsageBytes: 0,
 };
 
 function setStatus(text) {
@@ -39,10 +68,56 @@ function b64ToBytes(b64) {
   return arr;
 }
 
-async function loadJson(path) {
-  const resp = await fetch(path, { cache: "no-store" });
-  if (!resp.ok) throw new Error(`无法读取 ${path}`);
-  return await resp.json();
+function bytesToMB(n) {
+  return (n / 1024 / 1024).toFixed(1) + " MB";
+}
+
+function updateCacheMeta() {
+  cacheMetaEl.textContent = `缓存：${bytesToMB(state.cacheUsageBytes)} / ${bytesToMB(MAX_CACHE_BYTES)}`;
+}
+
+function updatePlayModeUI() {
+  if (!playModeLabelEl) return;
+
+  const mapping = {
+    [PLAY_MODE.SINGLE]: {
+      label: "播放模式：单曲循环"
+    },
+    [PLAY_MODE.LIST]: {
+      label: "播放模式：列表循环"
+    },
+    [PLAY_MODE.SHUFFLE]: {
+      label: "播放模式：随机播放"
+    },
+  };
+
+  const current = mapping[state.playMode];
+  playModeLabelEl.textContent = current.label;
+
+  // [modeSingleBtn, modeListBtn, modeShuffleBtn].forEach((btn) => {
+  //   btn?.classList.toggle("active", btn === current.activeBtn);
+  // });
+}
+
+function setPlayMode(mode) {
+  state.playMode = mode;
+  if (mode !== PLAY_MODE.SHUFFLE) {
+    state.shuffleHistory = [];
+  } else if (state.currentIndex >= 0) {
+    state.shuffleHistory = [state.currentIndex];
+  }
+  updatePlayModeUI();
+}
+
+function getTrackCount() {
+  return state.catalog?.tracks?.length || 0;
+}
+
+function loadJson(path) {
+  return fetch(path, { cache: "no-store" }).then((resp) => {
+    if (!resp.ok) throw new Error(`无法读取 ${path}`);
+    return resp.json();
+  });
 }
 
 async function deriveManifestKey(password, kdfInfo) {
@@ -77,10 +152,7 @@ async function decryptManifest(password) {
   const cipher = state.manifestSec.cipher;
 
   const plainBuffer = await crypto.subtle.decrypt(
-    {
-      name: "AES-GCM",
-      iv: b64ToBytes(cipher.nonce),
-    },
+    { name: "AES-GCM", iv: b64ToBytes(cipher.nonce) },
     key,
     b64ToBytes(cipher.ciphertext)
   );
@@ -99,76 +171,188 @@ async function importAesKeyFromRaw(rawKeyBytes) {
   );
 }
 
-async function decryptAssetToBuffer(asset) {
+async function decryptBinaryAsset(asset) {
   const resp = await fetch(asset.file, { cache: "no-store" });
   if (!resp.ok) throw new Error(`无法读取文件：${asset.file}`);
-  const cipherBuffer = await resp.arrayBuffer();
 
+  const cipherBuffer = await resp.arrayBuffer();
   const dekKey = await importAesKeyFromRaw(b64ToBytes(asset.dek));
 
   return await crypto.subtle.decrypt(
-    {
-      name: "AES-GCM",
-      iv: b64ToBytes(asset.nonce),
-    },
+    { name: "AES-GCM", iv: b64ToBytes(asset.nonce) },
     dekKey,
     cipherBuffer
   );
 }
 
-function revokeCacheEntry(stem) {
-  const cached = state.cache.get(stem);
-  if (!cached) return;
-  if (cached.audioUrl) URL.revokeObjectURL(cached.audioUrl);
-  if (cached.coverUrl) URL.revokeObjectURL(cached.coverUrl);
-  state.cache.delete(stem);
+/* -------------------- IndexedDB segment cache -------------------- */
+
+function openCacheDb() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, 1);
+
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      const store = db.createObjectStore(SEGMENT_STORE, { keyPath: "key" });
+      store.createIndex("atime", "atime", { unique: false });
+    };
+
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
 }
 
-function pruneCache(keepStems) {
-  for (const stem of state.cache.keys()) {
-    if (!keepStems.has(stem)) {
-      revokeCacheEntry(stem);
-    }
+function tx(storeName, mode = "readonly") {
+  return state.db.transaction(storeName, mode).objectStore(storeName);
+}
+
+function idbGet(key) {
+  return new Promise((resolve, reject) => {
+    const req = tx(SEGMENT_STORE).get(key);
+    req.onsuccess = () => resolve(req.result || null);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+function idbPut(value) {
+  return new Promise((resolve, reject) => {
+    const req = tx(SEGMENT_STORE, "readwrite").put(value);
+    req.onsuccess = () => resolve();
+    req.onerror = () => reject(req.error);
+  });
+}
+
+function idbDelete(key) {
+  return new Promise((resolve, reject) => {
+    const req = tx(SEGMENT_STORE, "readwrite").delete(key);
+    req.onsuccess = () => resolve();
+    req.onerror = () => reject(req.error);
+  });
+}
+
+function idbGetAllByAtime() {
+  return new Promise((resolve, reject) => {
+    const store = tx(SEGMENT_STORE);
+    const idx = store.index("atime");
+    const req = idx.getAll();
+    req.onsuccess = () => resolve(req.result || []);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function refreshCacheUsage() {
+  const all = await idbGetAllByAtime();
+  state.cacheUsageBytes = all.reduce((sum, item) => sum + (item.size || 0), 0);
+  updateCacheMeta();
+}
+
+async function touchSegmentCacheRecord(record) {
+  record.atime = Date.now();
+  await idbPut(record);
+}
+
+async function enforceCacheBudget() {
+  await refreshCacheUsage();
+  if (state.cacheUsageBytes <= MAX_CACHE_BYTES) return;
+
+  const all = await idbGetAllByAtime();
+  let usage = state.cacheUsageBytes;
+
+  for (const item of all) {
+    if (usage <= TRIM_TO_BYTES) break;
+    await idbDelete(item.key);
+    usage -= item.size || 0;
+  }
+
+  state.cacheUsageBytes = Math.max(0, usage);
+  updateCacheMeta();
+}
+
+async function getCachedSegment(trackId, segIndex) {
+  const key = `${trackId}:${segIndex}`;
+  const record = await idbGet(key);
+  if (!record) return null;
+  await touchSegmentCacheRecord(record);
+  return record.data;
+}
+
+async function putCachedSegment(trackId, segIndex, buffer) {
+  const key = `${trackId}:${segIndex}`;
+  const size = buffer.byteLength || 0;
+
+  await idbPut({
+    key,
+    trackId,
+    segIndex,
+    size,
+    atime: Date.now(),
+    data: buffer,
+  });
+
+  state.cacheUsageBytes += size;
+  updateCacheMeta();
+
+  if (state.cacheUsageBytes > MAX_CACHE_BYTES) {
+    await enforceCacheBudget();
   }
 }
 
+async function getOrFetchDecryptedSegment(track, segment) {
+  const cached = await getCachedSegment(track.id, segment.index);
+  if (cached) return cached;
+
+  const resp = await fetch(segment.file, { cache: "no-store" });
+  if (!resp.ok) throw new Error(`无法读取分段：${segment.file}`);
+  const cipherBuffer = await resp.arrayBuffer();
+
+  const dekKey = await importAesKeyFromRaw(b64ToBytes(segment.dek));
+  const plainBuffer = await crypto.subtle.decrypt(
+    { name: "AES-GCM", iv: b64ToBytes(segment.nonce) },
+    dekKey,
+    cipherBuffer
+  );
+
+  await putCachedSegment(track.id, segment.index, plainBuffer);
+  return plainBuffer;
+}
+
+/* -------------------- cover / lyrics -------------------- */
+
+function revokeTrackBundle(stem) {
+  const bundle = state.trackBundleCache.get(stem);
+  if (!bundle) return;
+  if (bundle.coverUrl) URL.revokeObjectURL(bundle.coverUrl);
+  state.trackBundleCache.delete(stem);
+}
+
 async function getTrackBundle(stem) {
-  const cached = state.cache.get(stem);
+  const cached = state.trackBundleCache.get(stem);
   if (cached) return cached;
 
   const track = state.payload.tracks[stem];
-  if (!track) throw new Error(`未找到曲目：${stem}`);
-
   const result = {
-    audioUrl: null,
     coverUrl: null,
     lrcText: null,
     txtText: null,
   };
 
-  if (track.audio) {
-    const audioBuffer = await decryptAssetToBuffer(track.audio);
-    const audioBlob = new Blob([audioBuffer], { type: track.audio.mime || "audio/mpeg" });
-    result.audioUrl = URL.createObjectURL(audioBlob);
-  }
-
   if (track.cover) {
-    const coverBuffer = await decryptAssetToBuffer(track.cover);
+    const coverBuffer = await decryptBinaryAsset(track.cover);
     const coverBlob = new Blob([coverBuffer], { type: track.cover.mime || "image/jpeg" });
     result.coverUrl = URL.createObjectURL(coverBlob);
   }
 
   if (track.lrc) {
-    const lrcBuffer = await decryptAssetToBuffer(track.lrc);
+    const lrcBuffer = await decryptBinaryAsset(track.lrc);
     result.lrcText = new TextDecoder("utf-8").decode(lrcBuffer);
   }
 
   if (track.txt) {
-    const txtBuffer = await decryptAssetToBuffer(track.txt);
+    const txtBuffer = await decryptBinaryAsset(track.txt);
     result.txtText = new TextDecoder("utf-8").decode(txtBuffer);
   }
 
-  state.cache.set(stem, result);
+  state.trackBundleCache.set(stem, result);
   return result;
 }
 
@@ -223,11 +407,8 @@ function updateLyricsByTime(currentTime) {
 
   let active = -1;
   for (let i = 0; i < state.currentLrc.length; i++) {
-    if (currentTime >= state.currentLrc[i].time) {
-      active = i;
-    } else {
-      break;
-    }
+    if (currentTime >= state.currentLrc[i].time) active = i;
+    else break;
   }
 
   if (active === state.currentLrcIndex) return;
@@ -267,6 +448,8 @@ function applyLyrics(bundle) {
   renderPlainLyrics("暂无歌词");
 }
 
+/* -------------------- list UI -------------------- */
+
 function renderTrackList() {
   trackListEl.innerHTML = "";
 
@@ -282,6 +465,7 @@ function renderTrackList() {
 
     const info = document.createElement("div");
     const badges = [];
+    // badges.push(`<span class="badge">${track.segment_count} seg</span>`);
     if (track.has_lrc) badges.push(`<span class="badge">LRC</span>`);
     else if (track.has_txt) badges.push(`<span class="badge">TXT</span>`);
     if (track.has_cover) badges.push(`<span class="badge">Cover</span>`);
@@ -310,57 +494,250 @@ function markActiveTrack(index) {
   });
 }
 
-async function prefetchNext(index) {
-  const nextIndex = index + 1;
-  if (nextIndex >= state.catalog.tracks.length) return;
+/* -------------------- play mode / navigation -------------------- */
 
-  const nextTrack = state.catalog.tracks[nextIndex];
-  if (state.cache.has(nextTrack.stem)) return;
+function getRandomIndexExcluding(excludeIndex) {
+  const count = getTrackCount();
+  if (count <= 1) return excludeIndex;
 
-  try {
-    await getTrackBundle(nextTrack.stem);
-    const keep = new Set([state.catalog.tracks[index].stem, nextTrack.stem]);
-    pruneCache(keep);
-  } catch (err) {
-    console.warn("预缓存下一首失败：", err);
+  let candidate = excludeIndex;
+  while (candidate === excludeIndex) {
+    candidate = Math.floor(Math.random() * count);
+  }
+  return candidate;
+}
+
+function rememberShuffleIndex(index) {
+  if (state.playMode !== PLAY_MODE.SHUFFLE) return;
+  const history = state.shuffleHistory;
+  if (history[history.length - 1] !== index) {
+    history.push(index);
   }
 }
 
-async function playTrackByIndex(index) {
+async function playPreviousTrack() {
+  if (!state.unlocked || getTrackCount() === 0) {
+    setStatus("请先输入正确口令。");
+    return;
+  }
+
+  let targetIndex = state.currentIndex;
+
+  if (state.playMode === PLAY_MODE.SHUFFLE && state.shuffleHistory.length > 1) {
+    state.shuffleHistory.pop();
+    targetIndex = state.shuffleHistory[state.shuffleHistory.length - 1];
+  } else if (state.currentIndex > 0) {
+    targetIndex = state.currentIndex - 1;
+  } else {
+    targetIndex = getTrackCount() - 1;
+  }
+
+  await playTrackByIndex(targetIndex, { pushShuffleHistory: false });
+}
+
+async function playNextTrack({ auto = false } = {}) {
+  if (!state.unlocked || getTrackCount() === 0) {
+    setStatus("请先输入正确口令。");
+    return;
+  }
+
+  let targetIndex = state.currentIndex;
+
+  if (state.playMode === PLAY_MODE.SINGLE && auto && state.currentIndex >= 0) {
+    targetIndex = state.currentIndex;
+  } else if (state.playMode === PLAY_MODE.SHUFFLE) {
+    targetIndex = getRandomIndexExcluding(state.currentIndex >= 0 ? state.currentIndex : 0);
+  } else if (state.currentIndex < 0) {
+    targetIndex = 0;
+  } else {
+    targetIndex = (state.currentIndex + 1) % getTrackCount();
+  }
+
+  await playTrackByIndex(targetIndex, { pushShuffleHistory: state.playMode === PLAY_MODE.SHUFFLE });
+}
+
+/* -------------------- audio streaming -------------------- */
+
+function stopCurrentStreamSession() {
+  if (!state.streamSession) return;
+  state.streamSession.aborted = true;
+  if (state.streamSession.objectUrl) {
+    URL.revokeObjectURL(state.streamSession.objectUrl);
+  }
+  state.streamSession = null;
+}
+
+function appendBufferAsync(sourceBuffer, arrayBuffer) {
+  return new Promise((resolve, reject) => {
+    const onUpdateEnd = () => {
+      cleanup();
+      resolve();
+    };
+    const onError = () => {
+      cleanup();
+      reject(new Error("SourceBuffer append 失败"));
+    };
+    const cleanup = () => {
+      sourceBuffer.removeEventListener("updateend", onUpdateEnd);
+      sourceBuffer.removeEventListener("error", onError);
+    };
+    sourceBuffer.addEventListener("updateend", onUpdateEnd, { once: true });
+    sourceBuffer.addEventListener("error", onError, { once: true });
+    sourceBuffer.appendBuffer(arrayBuffer);
+  });
+}
+
+async function streamTrackWithMSE(track) {
+  const mime = track.audio.mime;
+  if (!window.MediaSource || !MediaSource.isTypeSupported(mime)) {
+    throw new Error("MSE 不可用或当前 MIME 不支持");
+  }
+
+  stopCurrentStreamSession();
+
+  const mediaSource = new MediaSource();
+  const objectUrl = URL.createObjectURL(mediaSource);
+  const session = {
+    aborted: false,
+    mediaSource,
+    objectUrl,
+    trackId: track.id,
+  };
+  state.streamSession = session;
+  player.src = objectUrl;
+
+  await new Promise((resolve, reject) => {
+    mediaSource.addEventListener("sourceopen", resolve, { once: true });
+    mediaSource.addEventListener("error", () => reject(new Error("MediaSource 打开失败")), { once: true });
+  });
+
+  if (session.aborted) return;
+
+  const sourceBuffer = mediaSource.addSourceBuffer(mime);
+  const segments = track.audio.segments;
+
+  for (let i = 0; i < segments.length; i++) {
+    if (session.aborted) return;
+    const plainBuffer = await getOrFetchDecryptedSegment(track, segments[i]);
+    await appendBufferAsync(sourceBuffer, plainBuffer);
+
+    for (let p = 1; p <= PREFETCH_AHEAD_SEGMENTS; p++) {
+      const next = segments[i + p];
+      if (!next) continue;
+      void getOrFetchDecryptedSegment(track, next).catch(() => {});
+    }
+
+    if (i === 0) {
+      try {
+        await player.play();
+      } catch (_) {}
+    }
+  }
+
+  if (!session.aborted && mediaSource.readyState === "open") {
+    await new Promise((resolve) => {
+      if (sourceBuffer.updating) {
+        sourceBuffer.addEventListener("updateend", resolve, { once: true });
+      } else {
+        resolve();
+      }
+    });
+    try {
+      mediaSource.endOfStream();
+    } catch (_) {}
+  }
+}
+
+async function fallbackAssembleWholeTrack(track) {
+  const parts = [];
+  for (const seg of track.audio.segments) {
+    const buf = await getOrFetchDecryptedSegment(track, seg);
+    parts.push(buf);
+  }
+
+  const blob = new Blob(parts, { type: track.audio.mime || "audio/mpeg" });
+  const url = URL.createObjectURL(blob);
+
+  stopCurrentStreamSession();
+  state.streamSession = {
+    aborted: false,
+    objectUrl: url,
+    trackId: track.id,
+  };
+
+  player.src = url;
+  await player.play();
+}
+
+async function prefetchTrackSegments(track, startSegIndex = 0, count = 2) {
+  const segs = track.audio.segments.slice(startSegIndex, startSegIndex + count);
+  for (const seg of segs) {
+    void getOrFetchDecryptedSegment(track, seg).catch(() => {});
+  }
+}
+
+async function playTrackByIndex(index, { pushShuffleHistory = state.playMode === PLAY_MODE.SHUFFLE } = {}) {
   if (!state.unlocked || !state.payload) {
     setStatus("请先输入正确口令。");
     return;
   }
 
-  const trackMeta = state.catalog.tracks[index];
-  if (!trackMeta) return;
+  const meta = state.catalog.tracks[index];
+  if (!meta) return;
+
+  const track = state.payload.tracks[meta.stem];
+  if (!track || !track.audio) return;
 
   try {
-    setStatus(`正在解密：${trackMeta.title}`);
-    const bundle = await getTrackBundle(trackMeta.stem);
+    setStatus(`正在准备：${meta.title}`);
 
-    state.currentIndex = index;
-    player.src = bundle.audioUrl;
+    const bundle = await getTrackBundle(meta.stem);
     applyCover(bundle.coverUrl);
     applyLyrics(bundle);
 
-    await player.play();
+    state.currentIndex = index;
+    if (pushShuffleHistory) rememberShuffleIndex(index);
+    else if (state.playMode === PLAY_MODE.SHUFFLE && state.shuffleHistory.length === 0) {
+      state.shuffleHistory = [index];
+    }
 
-    nowPlayingEl.textContent = `正在播放：${trackMeta.title}`;
     markActiveTrack(index);
-    setStatus(`播放中：${trackMeta.title}`);
+    nowPlayingEl.textContent = `正在播放：${meta.title}`;
 
-    const keep = new Set([trackMeta.stem]);
-    const nextTrack = state.catalog.tracks[index + 1];
-    if (nextTrack) keep.add(nextTrack.stem);
-    pruneCache(keep);
+    try {
+      await streamTrackWithMSE(track);
+      setStatus(`♪${meta.title}`);
+    } catch (err) {
+      console.warn("MSE 路径失败，回退整首拼接：", err);
+      setStatus(`♪${meta.title}`);
+      await fallbackAssembleWholeTrack(track);
+    }
 
-    void prefetchNext(index);
+    if (state.playMode === PLAY_MODE.SHUFFLE) {
+      const upcomingIndex = getRandomIndexExcluding(index);
+      const nextMeta = state.catalog.tracks[upcomingIndex];
+      const nextTrack = nextMeta ? state.payload.tracks[nextMeta.stem] : null;
+      if (nextTrack?.audio) {
+        void prefetchTrackSegments(nextTrack, 0, 2);
+      }
+      return;
+    }
+
+    const nextIndex = (index + 1) % getTrackCount();
+    const nextMeta = state.catalog.tracks[nextIndex];
+    if (nextMeta) {
+      const nextTrack = state.payload.tracks[nextMeta.stem];
+      if (nextTrack?.audio) {
+        void prefetchTrackSegments(nextTrack, 0, 2);
+      }
+    }
   } catch (err) {
     console.error(err);
-    setStatus(`解密失败：${trackMeta.title}`);
+    setStatus(`播放失败：${meta.title}`);
   }
 }
+
+/* -------------------- unlock / init -------------------- */
 
 async function unlock() {
   const password = passwordEl.value;
@@ -373,7 +750,28 @@ async function unlock() {
     setStatus("正在解锁…");
     state.payload = await decryptManifest(password);
     state.unlocked = true;
+
+    if (navigator.storage?.persisted) {
+      try {
+        const persisted = await navigator.storage.persisted();
+        if (!persisted && navigator.storage.persist) {
+          await navigator.storage.persist();
+        }
+      } catch (_) {}
+    }
+
+    if (navigator.storage?.estimate) {
+      try {
+        const info = await navigator.storage.estimate();
+        console.log("storage estimate", info);
+      } catch (_) {}
+    }
+
     setStatus("解锁成功。");
+    if (getTrackCount() > 0) {
+      await playTrackByIndex(0);
+    }
+
   } catch (err) {
     console.error(err);
     state.payload = null;
@@ -382,13 +780,49 @@ async function unlock() {
   }
 }
 
-player.addEventListener("ended", async () => {
-  const nextIndex = state.currentIndex + 1;
-  if (nextIndex < state.catalog.tracks.length) {
-    await playTrackByIndex(nextIndex);
-  } else {
-    setStatus("已播放到最后一首。");
+modeBtn.onclick = () => {
+
+  state.playMode = (state.playMode + 1) % 3
+
+  switch (state.playMode) {
+
+    case PLAY_MODE.LIST:
+      modeBtn.textContent = "🔁"
+      break
+
+    case PLAY_MODE.SINGLE:
+      modeBtn.textContent = "🔂"
+      break
+
+    case PLAY_MODE.SHUFFLE:
+      modeBtn.textContent = "🔀"
+      break
+
   }
+}
+
+player.addEventListener("ended", async () => {
+
+  if (!state.unlocked || getTrackCount() === 0) return;
+
+  if (state.playMode === PLAY_MODE.LOOP_ONE) {
+
+    player.currentTime = 0;
+    await player.play();
+
+  }
+  else if (state.playMode === PLAY_MODE.SHUFFLE) {
+
+    const next = Math.floor(Math.random() * getTrackCount());
+    await playTrackByIndex(next);
+
+  }
+  else {
+
+    await playNextTrack({ auto: true });
+
+  }
+
 });
 
 player.addEventListener("timeupdate", () => {
@@ -399,15 +833,28 @@ unlockBtn.addEventListener("click", unlock);
 passwordEl.addEventListener("keydown", (e) => {
   if (e.key === "Enter") unlock();
 });
+prevBtn?.addEventListener("click", () => {
+  void playPreviousTrack();
+});
+nextBtn?.addEventListener("click", () => {
+  void playNextTrack({ auto: false });
+});
+// modeSingleBtn?.addEventListener("click", () => setPlayMode(PLAY_MODE.SINGLE));
+// modeListBtn?.addEventListener("click", () => setPlayMode(PLAY_MODE.LIST));
+// modeShuffleBtn?.addEventListener("click", () => setPlayMode(PLAY_MODE.SHUFFLE));
 
 (async function init() {
   try {
+    updatePlayModeUI();
+    state.db = await openCacheDb();
+    await refreshCacheUsage();
+
     state.catalog = await loadJson("./catalog.json");
     state.manifestSec = await loadJson("./manifest.sec.json");
     renderTrackList();
     setStatus(`已加载 ${state.catalog.tracks.length} 首。请输入口令。`);
   } catch (err) {
     console.error(err);
-    setStatus("加载歌单失败。");
+    setStatus("初始化失败。");
   }
 })();
