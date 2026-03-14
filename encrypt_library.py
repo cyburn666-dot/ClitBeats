@@ -141,6 +141,53 @@ def save_json(path: Path, data) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
 
+# def base_name(stem: str):
+#     """取 '-' 前的部分作为基名"""
+#     if "-" in stem:
+#         return stem.split("-", 1)[0]
+#     return stem
+
+# def find_cover(base: str):
+#     for ext in IMAGE_EXTS.keys():
+#         p = INPUT_DIR / f"{base}{ext}"
+#         if p.exists():
+#             return p.name
+#     return None
+
+def base_name(stem: str) -> str:
+    """取 '-' 前的部分作为共享资源基名。"""
+    if "-" in stem:
+        return stem.split("-", 1)[0].strip()
+    return stem.strip()
+
+
+def find_cover_for_stem(stem: str) -> Optional[Path]:
+    """
+    查找封面顺序：
+
+    1. 完全同名
+       XXX-摇滚版.jpg
+
+    2. 去掉 - 后缀
+       XXX.jpg
+    """
+
+    # 1️⃣ 完全同名
+    for ext in IMAGE_EXTS.keys():
+        p = INPUT_DIR / f"{stem}{ext}"
+        if p.exists():
+            return p
+
+    # 2️⃣ 去掉 - 后缀
+    base = base_name(stem)
+
+    if base != stem:
+        for ext in IMAGE_EXTS.keys():
+            p = INPUT_DIR / f"{base}{ext}"
+            if p.exists():
+                return p
+
+    return None
 
 def collect_input_groups() -> dict[str, dict[str, Path]]:
     if not INPUT_DIR.exists():
@@ -302,9 +349,12 @@ def build_library(password: str) -> None:
         else:
             track_id = next_track_id(new_catalog_tracks + old_catalog_tracks)
 
+        # lrc_path = stem_files.get(".lrc")
+        # txt_path = stem_files.get(".txt")
+        # cover_path = choose_cover_file(stem_files)
         lrc_path = stem_files.get(".lrc")
         txt_path = stem_files.get(".txt")
-        cover_path = choose_cover_file(stem_files)
+        cover_path = find_cover_for_stem(stem)
 
         audio_asset = reuse_or_pack_audio(old_track_payload.get("audio"), audio_path)
         lrc_asset = reuse_or_pack_single_asset(old_track_payload.get("lrc"), lrc_path)

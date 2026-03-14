@@ -52,6 +52,16 @@
       "mime": "audio/mpeg"
     },
     {
+      "id": "t032",
+      "stem": "Women's Shouting",
+      "title": "Women's Shouting",
+      "has_lrc": true,
+      "has_txt": false,
+      "has_cover": true,
+      "segment_count": 4,
+      "mime": "audio/mpeg"
+    },
+    {
       "id": "t020",
       "stem": "刀笔续雌篇-史诗",
       "title": "刀笔续雌篇-史诗",
