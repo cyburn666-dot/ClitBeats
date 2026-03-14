@@ -82,6 +82,16 @@
       "mime": "audio/mpeg"
     },
     {
+      "id": "t028",
+      "stem": "创世歌",
+      "title": "创世歌",
+      "has_lrc": true,
+      "has_txt": false,
+      "has_cover": true,
+      "segment_count": 3,
+      "mime": "audio/mpeg"
+    },
+    {
       "id": "t007",
       "stem": "女人，我们",
       "title": "女人，我们",
@@ -89,6 +99,16 @@
       "has_txt": true,
       "has_cover": true,
       "segment_count": 1,
+      "mime": "audio/mpeg"
+    },
+    {
+      "id": "t029",
+      "stem": "女儿心-剑修版",
+      "title": "女儿心-剑修版",
+      "has_lrc": false,
+      "has_txt": false,
+      "has_cover": false,
+      "segment_count": 5,
       "mime": "audio/mpeg"
     },
     {
@@ -129,6 +149,26 @@
       "has_txt": true,
       "has_cover": true,
       "segment_count": 1,
+      "mime": "audio/mpeg"
+    },
+    {
+      "id": "t030",
+      "stem": "来日不方长",
+      "title": "来日不方长",
+      "has_lrc": true,
+      "has_txt": false,
+      "has_cover": false,
+      "segment_count": 5,
+      "mime": "audio/mpeg"
+    },
+    {
+      "id": "t031",
+      "stem": "来日亦可期",
+      "title": "来日亦可期",
+      "has_lrc": true,
+      "has_txt": false,
+      "has_cover": false,
+      "segment_count": 6,
       "mime": "audio/mpeg"
     },
     {
