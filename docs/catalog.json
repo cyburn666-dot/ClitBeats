@@ -16,7 +16,7 @@
       "stem": "Encourage-摇滚",
       "title": "Encourage-摇滚",
       "has_lrc": true,
-      "has_txt": true,
+      "has_txt": false,
       "has_cover": true,
       "segment_count": 5,
       "mime": "audio/mpeg"
@@ -182,6 +182,16 @@
       "mime": "audio/mpeg"
     },
     {
+      "id": "t033",
+      "stem": "瀑布们",
+      "title": "瀑布们",
+      "has_lrc": true,
+      "has_txt": false,
+      "has_cover": true,
+      "segment_count": 1,
+      "mime": "audio/mpeg"
+    },
+    {
       "id": "t009",
       "stem": "生来如此",
       "title": "生来如此",
@@ -199,6 +209,16 @@
       "has_txt": false,
       "has_cover": true,
       "segment_count": 5,
+      "mime": "audio/mpeg"
+    },
+    {
+      "id": "t034",
+      "stem": "革新进行曲",
+      "title": "革新进行曲",
+      "has_lrc": true,
+      "has_txt": false,
+      "has_cover": true,
+      "segment_count": 3,
       "mime": "audio/mpeg"
     }
   ],

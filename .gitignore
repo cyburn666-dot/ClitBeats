@@ -1,6 +1,8 @@
 # 原始音频文件不提交
 input/*
 .backup/*
-
+__pycache__/*
+output/*
 # 但保留目录结构
 !input/.gitkeep
+!output/.gitkeep
