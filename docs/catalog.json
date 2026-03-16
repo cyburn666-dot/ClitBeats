@@ -122,6 +122,26 @@
       "mime": "audio/mpeg"
     },
     {
+      "id": "t035",
+      "stem": "女鱼",
+      "title": "女鱼",
+      "has_lrc": true,
+      "has_txt": false,
+      "has_cover": true,
+      "segment_count": 3,
+      "mime": "audio/mpeg"
+    },
+    {
+      "id": "t036",
+      "stem": "姐妹们干嘛呢干嘛呢干嘛呢",
+      "title": "姐妹们干嘛呢干嘛呢干嘛呢",
+      "has_lrc": true,
+      "has_txt": false,
+      "has_cover": true,
+      "segment_count": 2,
+      "mime": "audio/mpeg"
+    },
+    {
       "id": "t023",
       "stem": "或可候野火-嘶吼",
       "title": "或可候野火-嘶吼",
@@ -179,6 +199,16 @@
       "has_txt": false,
       "has_cover": false,
       "segment_count": 6,
+      "mime": "audio/mpeg"
+    },
+    {
+      "id": "t037",
+      "stem": "潮汐日",
+      "title": "潮汐日",
+      "has_lrc": true,
+      "has_txt": false,
+      "has_cover": true,
+      "segment_count": 2,
       "mime": "audio/mpeg"
     },
     {
