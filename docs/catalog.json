@@ -250,6 +250,16 @@
       "has_cover": true,
       "segment_count": 3,
       "mime": "audio/mpeg"
+    },
+    {
+      "id": "t038",
+      "stem": "风雪漫漫-古风版",
+      "title": "风雪漫漫-古风版",
+      "has_lrc": true,
+      "has_txt": false,
+      "has_cover": false,
+      "segment_count": 4,
+      "mime": "audio/mpeg"
     }
   ],
   "audio_segment_max_bytes": 2097152

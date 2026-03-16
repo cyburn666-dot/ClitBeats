@@ -3,6 +3,7 @@ from img_utils import preprocess_all_images
 # from audio_tag_utils import replace_all_mp3_covers
 from audio_tag_utils import strip_all_embedded_metadata
 from docx_lrc_utils import convert_all_docx_to_lrc
+from srt_utils import convert_all_srt_to_lrc
 
 INPUT_DIR = Path("input")
 OUTPUT_DIR = Path("output")
@@ -21,7 +22,12 @@ def main() -> None:
     # 2. 提取歌词 docx -> lrc
     convert_all_docx_to_lrc(
         input_dir=INPUT_DIR,
-        output_dir=OUTPUT_DIR,
+        output_dir=OUTPUT_DIR
+    )
+
+    convert_all_srt_to_lrc(
+        input_dir=INPUT_DIR,
+        output_dir=OUTPUT_DIR
     )
 
     # 3. 清理MP3 MetaData
@@ -29,3 +35,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
