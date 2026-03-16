@@ -257,7 +257,7 @@
       "title": "风雪漫漫-古风版",
       "has_lrc": true,
       "has_txt": false,
-      "has_cover": false,
+      "has_cover": true,
       "segment_count": 4,
       "mime": "audio/mpeg"
     }
