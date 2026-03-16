@@ -187,7 +187,7 @@
       "title": "来日不方长",
       "has_lrc": true,
       "has_txt": false,
-      "has_cover": false,
+      "has_cover": true,
       "segment_count": 5,
       "mime": "audio/mpeg"
     },
@@ -197,7 +197,7 @@
       "title": "来日亦可期",
       "has_lrc": true,
       "has_txt": false,
-      "has_cover": false,
+      "has_cover": true,
       "segment_count": 6,
       "mime": "audio/mpeg"
     },
