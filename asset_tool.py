@@ -22,12 +22,12 @@ def main() -> None:
     # 2. 提取歌词 docx -> lrc
     convert_all_docx_to_lrc(
         input_dir=INPUT_DIR,
-        output_dir=OUTPUT_DIR
+        output_dir=INPUT_DIR
     )
 
     convert_all_srt_to_lrc(
         input_dir=INPUT_DIR,
-        output_dir=OUTPUT_DIR
+        output_dir=INPUT_DIR
     )
 
     # 3. 清理MP3 MetaData
