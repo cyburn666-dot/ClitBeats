@@ -182,16 +182,6 @@
       "mime": "audio/mpeg"
     },
     {
-      "id": "t049",
-      "stem": "打工人 之路灯歌-阴暗版",
-      "title": "打工人 之路灯歌-阴暗版",
-      "has_lrc": true,
-      "has_txt": false,
-      "has_cover": false,
-      "segment_count": 2,
-      "mime": "audio/mpeg"
-    },
-    {
       "id": "t039",
       "stem": "打工人之怨",
       "title": "打工人之怨",
@@ -225,6 +215,16 @@
       "id": "t042",
       "stem": "打工人之路灯歌",
       "title": "打工人之路灯歌",
+      "has_lrc": true,
+      "has_txt": false,
+      "has_cover": true,
+      "segment_count": 2,
+      "mime": "audio/mpeg"
+    },
+    {
+      "id": "t050",
+      "stem": "打工人之路灯歌-阴暗版",
+      "title": "打工人之路灯歌-阴暗版",
       "has_lrc": true,
       "has_txt": false,
       "has_cover": true,
