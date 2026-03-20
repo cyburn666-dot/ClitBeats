@@ -142,6 +142,16 @@
       "mime": "audio/mpeg"
     },
     {
+      "id": "t044",
+      "stem": "我从江之北路过",
+      "title": "我从江之北路过",
+      "has_lrc": true,
+      "has_txt": false,
+      "has_cover": true,
+      "segment_count": 2,
+      "mime": "audio/mpeg"
+    },
+    {
       "id": "t023",
       "stem": "或可候野火-嘶吼",
       "title": "或可候野火-嘶吼",
@@ -179,6 +189,16 @@
       "has_txt": true,
       "has_cover": true,
       "segment_count": 5,
+      "mime": "audio/mpeg"
+    },
+    {
+      "id": "t045",
+      "stem": "打工人之怨-地铁民谣版",
+      "title": "打工人之怨-地铁民谣版",
+      "has_lrc": true,
+      "has_txt": false,
+      "has_cover": true,
+      "segment_count": 2,
       "mime": "audio/mpeg"
     },
     {
@@ -249,6 +269,16 @@
       "has_txt": false,
       "has_cover": true,
       "segment_count": 2,
+      "mime": "audio/mpeg"
+    },
+    {
+      "id": "t046",
+      "stem": "潮汐日-也许是终版",
+      "title": "潮汐日-也许是终版",
+      "has_lrc": true,
+      "has_txt": false,
+      "has_cover": true,
+      "segment_count": 4,
       "mime": "audio/mpeg"
     },
     {
