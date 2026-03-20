@@ -115,7 +115,7 @@
       "id": "t029",
       "stem": "女儿心-剑修版",
       "title": "女儿心-剑修版",
-      "has_lrc": false,
+      "has_lrc": true,
       "has_txt": false,
       "has_cover": false,
       "segment_count": 5,
@@ -189,6 +189,26 @@
       "has_txt": false,
       "has_cover": true,
       "segment_count": 4,
+      "mime": "audio/mpeg"
+    },
+    {
+      "id": "t042",
+      "stem": "打工人之路灯歌",
+      "title": "打工人之路灯歌",
+      "has_lrc": false,
+      "has_txt": false,
+      "has_cover": true,
+      "segment_count": 2,
+      "mime": "audio/mpeg"
+    },
+    {
+      "id": "t043",
+      "stem": "打工人之路灯歌_阴暗版",
+      "title": "打工人之路灯歌_阴暗版",
+      "has_lrc": false,
+      "has_txt": false,
+      "has_cover": false,
+      "segment_count": 3,
       "mime": "audio/mpeg"
     },
     {
