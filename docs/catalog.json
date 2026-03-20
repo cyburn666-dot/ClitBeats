@@ -222,12 +222,12 @@
       "mime": "audio/mpeg"
     },
     {
-      "id": "t043",
-      "stem": "打工人之路灯歌_阴暗版",
-      "title": "打工人之路灯歌_阴暗版",
+      "id": "t047",
+      "stem": "打工人之路灯歌-阴暗版",
+      "title": "打工人之路灯歌-阴暗版",
       "has_lrc": false,
       "has_txt": false,
-      "has_cover": false,
+      "has_cover": true,
       "segment_count": 3,
       "mime": "audio/mpeg"
     },
