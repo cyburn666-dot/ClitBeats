@@ -215,7 +215,7 @@
       "id": "t042",
       "stem": "打工人之路灯歌",
       "title": "打工人之路灯歌",
-      "has_lrc": false,
+      "has_lrc": true,
       "has_txt": false,
       "has_cover": true,
       "segment_count": 2,
@@ -229,6 +229,16 @@
       "has_txt": false,
       "has_cover": true,
       "segment_count": 3,
+      "mime": "audio/mpeg"
+    },
+    {
+      "id": "t048",
+      "stem": "打工人之邪恶上班族",
+      "title": "打工人之邪恶上班族",
+      "has_lrc": true,
+      "has_txt": false,
+      "has_cover": true,
+      "segment_count": 4,
       "mime": "audio/mpeg"
     },
     {
@@ -299,16 +309,6 @@
       "has_txt": true,
       "has_cover": true,
       "segment_count": 1,
-      "mime": "audio/mpeg"
-    },
-    {
-      "id": "t041",
-      "stem": "邪恶上班族",
-      "title": "邪恶上班族",
-      "has_lrc": true,
-      "has_txt": false,
-      "has_cover": true,
-      "segment_count": 4,
       "mime": "audio/mpeg"
     },
     {
