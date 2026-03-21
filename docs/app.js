@@ -1,9 +1,10 @@
-const statusEl = document.getElementById("status");
+﻿const statusEl = document.getElementById("status");
 const audioInfo = document.getElementById("audioInfo");
 const cacheMetaEl = document.getElementById("cacheMeta");
 const trackListEl = document.getElementById("trackList");
 const passwordEl = document.getElementById("password");
 const unlockBtn = document.getElementById("unlockBtn");
+const unlockRowEl = document.getElementById("unlockRow");
 const player = document.getElementById("player");
 // const nowPlayingEl = document.getElementById("nowPlaying");
 const topEl = document.querySelector(".top");
@@ -11,7 +12,8 @@ const coverEl = document.getElementById("cover");
 const coverContainer = document.getElementById("coverContainer");
 const coverPlaceholderEl = document.getElementById("coverPlaceholder");
 const lyricsContentEl = document.getElementById("lyricsContent");
-const lyricsPanel = document.getElementById("lyricsPanel")
+const lyricsPanel = document.getElementById("lyricsPanel");
+const lockedContentHintEl = document.getElementById("lockedContentHint");
 const prevBtn = document.getElementById("prevBtn");
 const nextBtn = document.getElementById("nextBtn");
 // const modeSingleBtn = document.getElementById("modeSingleBtn");
@@ -55,9 +57,29 @@ const state = {
 function setStatus(text) {
   statusEl.textContent = text;
 }
-
 function setAudioInfo(text){
   audioInfo.textContent = text;
+}
+
+function setUnlockedContentVisible(visible) {
+  lyricsPanel.classList.toggle("hidden", !visible);
+  trackListEl.classList.toggle("hidden", !visible);
+  lockedContentHintEl.classList.toggle("hidden", visible);
+
+  lyricsPanel.hidden = !visible;
+  trackListEl.hidden = !visible;
+  lockedContentHintEl.hidden = visible;
+  unlockRowEl.hidden = visible;
+
+  // Force visibility state in case class toggling or cached styles are overridden.
+  lyricsPanel.style.display = visible ? "block" : "none";
+  trackListEl.style.display = visible ? "block" : "none";
+  lockedContentHintEl.style.display = visible ? "none" : "block";
+  unlockRowEl.style.display = visible ? "none" : "flex";
+  lyricsPanel.style.visibility = visible ? "visible" : "hidden";
+  trackListEl.style.visibility = visible ? "visible" : "hidden";
+  lockedContentHintEl.style.visibility = visible ? "hidden" : "visible";
+  unlockRowEl.style.visibility = visible ? "hidden" : "visible";
 }
 
 function escapeHtml(str) {
@@ -89,13 +111,13 @@ function updateCacheMeta() {
 
 //   const mapping = {
 //     [PLAY_MODE.SINGLE]: {
-//       label: "播放模式：单曲循环"
+//       label: "鎾斁妯″紡锛氬崟鏇插惊鐜?
 //     },
 //     [PLAY_MODE.LIST]: {
-//       label: "播放模式：列表循环"
+//       label: "鎾斁妯″紡锛氬垪琛ㄥ惊鐜?
 //     },
 //     [PLAY_MODE.SHUFFLE]: {
-//       label: "播放模式：随机播放"
+//       label: "鎾斁妯″紡锛氶殢鏈烘挱鏀?
 //     },
 //   };
 
@@ -511,7 +533,6 @@ function renderTrackList() {
     trackListEl.appendChild(li);
   });
 
-  trackListEl.classList.remove("hidden");
 }
 
 function markActiveTrack(index) {
@@ -616,7 +637,7 @@ function appendBufferAsync(sourceBuffer, arrayBuffer) {
 async function streamTrackWithMSE(track) {
   const mime = track.audio.mime;
   if (!window.MediaSource || !MediaSource.isTypeSupported(mime)) {
-    throw new Error("MSE 不可用或当前 MIME 不支持");
+    throw new Error("MSE unavailable or MIME not supported");
   }
 
   stopCurrentStreamSession();
@@ -715,8 +736,8 @@ async function playTrackByIndex(index, { pushShuffleHistory = state.playMode ===
   if (!track || !track.audio) return;
 
   try {
-    // setStatus(`正在准备：${meta.title}`);
-    setStatus(`正在准备……`);
+    // setStatus(`姝ｅ湪鍑嗗锛?{meta.title}`);
+    setStatus("正在准备播放...");
 
     const bundle = await getTrackBundle(meta.stem);
     applyCover(bundle.coverUrl);
@@ -729,19 +750,19 @@ async function playTrackByIndex(index, { pushShuffleHistory = state.playMode ===
     }
 
     markActiveTrack(index);
-    // nowPlayingEl.textContent = `正在播放：${meta.title}`;
-    // nowPlayingEl.textContent = `正在播放……`;
+    // nowPlayingEl.textContent = `姝ｅ湪鎾斁锛?{meta.title}`;
+    // nowPlayingEl.textContent = `姝ｅ湪鎾斁鈥︹€;
 
     try {
       await streamTrackWithMSE(track);
       setStatus('');
-      setAudioInfo(`♪${meta.title}`);
+      setAudioInfo(`♪ ${meta.title}`);
       topEl.classList.remove("no-cover");
       coverContainer.style.display = "flex";
     } catch (err) {
-      console.warn("MSE 路径失败，回退整首拼接：", err);
+      console.warn("MSE 流式播放失败，回退为整首拼接。", err);
       setStatus('');
-      setAudioInfo(`♪${meta.title}`);
+      setAudioInfo(`♪ ${meta.title}`);
       topEl.classList.remove("no-cover");
       coverContainer.style.display = "flex";
       await fallbackAssembleWholeTrack(track);
@@ -767,7 +788,7 @@ async function playTrackByIndex(index, { pushShuffleHistory = state.playMode ===
     }
   } catch (err) {
     console.error(err);
-    setStatus(`播放失败：${meta.title}`);
+    setStatus(`播放失败: ${meta.title}`);
   }
 }
 
@@ -781,9 +802,10 @@ async function unlock() {
   }
 
   try {
-    setStatus("正在解锁…");
+    setStatus("正在解锁...");
     state.payload = await decryptManifest(password);
     state.unlocked = true;
+    setUnlockedContentVisible(true);
 
     if (navigator.storage?.persisted) {
       try {
@@ -805,58 +827,45 @@ async function unlock() {
     if (getTrackCount() > 0) {
       await playTrackByIndex(0);
     }
-
   } catch (err) {
     console.error(err);
     state.payload = null;
     state.unlocked = false;
+    setUnlockedContentVisible(false);
     setStatus("口令错误或索引已损坏。");
   }
 }
 
 modeBtn.onclick = () => {
-
-  state.playMode = (state.playMode + 1) % 3
+  state.playMode = (state.playMode + 1) % 3;
 
   switch (state.playMode) {
-
     case PLAY_MODE.LIST:
-      modeBtn.textContent = "🔁"
-      break
+      modeBtn.textContent = "🔁";
+      break;
 
     case PLAY_MODE.SINGLE:
-      modeBtn.textContent = "🔂"
-      break
+      modeBtn.textContent = "🔂";
+      break;
 
     case PLAY_MODE.SHUFFLE:
-      modeBtn.textContent = "🔀"
-      break
-
+      modeBtn.textContent = "🔀";
+      break;
   }
-}
+};
 
 player.addEventListener("ended", async () => {
-
   if (!state.unlocked || getTrackCount() === 0) return;
 
   if (state.playMode === PLAY_MODE.SINGLE) {
-
     player.currentTime = 0;
     await player.play();
-
-  }
-  else if (state.playMode === PLAY_MODE.SHUFFLE) {
-
+  } else if (state.playMode === PLAY_MODE.SHUFFLE) {
     const next = Math.floor(Math.random() * getTrackCount());
     await playTrackByIndex(next);
-
-  }
-  else {
-
+  } else {
     await playNextTrack({ auto: true });
-
   }
-
 });
 
 player.addEventListener("timeupdate", () => {
@@ -902,9 +911,13 @@ window.addEventListener("pagehide", async () => {
     state.catalog = await loadJson("./catalog.json");
     state.manifestSec = await loadJson("./manifest.sec.json");
     renderTrackList();
-    setStatus(`已加载 ${state.catalog.tracks.length} 首。请输入口令。`);
+    setUnlockedContentVisible(false);
+    setStatus(`已加载 ${state.catalog.tracks.length} 首，请输入口令。`);
   } catch (err) {
     console.error(err);
     setStatus("初始化失败。");
   }
 })();
+
+
+

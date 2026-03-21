@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8" />
@@ -232,6 +232,14 @@
       color: var(--muted);
     }
     .hidden { display: none; }
+    .lock-note {
+      margin-top: 18px;
+      padding: 14px 16px;
+      border: 1px dashed var(--border);
+      border-radius: 14px;
+      color: var(--muted);
+      background: #fafafa;
+    }
     @media (max-width: 760px) {
       .top { grid-template-columns: 1fr; }
       .track {
@@ -273,7 +281,7 @@
           <h1>Clit Beats Playlist</h1>
           <!-- <p>音频按 2MB 以内分段加载与缓存，缓存达到约 500MB 时再清理到约 380MB。</p> -->
 
-          <div class="row">
+          <div class="row" id="unlockRow">
             <input id="password" type="password" placeholder="输入口令" />
             <button id="unlockBtn">解锁</button>
           </div>
@@ -297,7 +305,11 @@
             <!-- <div id="nowPlaying" class="now-playing">未播放</div> -->
           </div>
 
-          <div class="lyrics-panel" id="lyricsPanel">
+          <div id="lockedContentHint" class="lock-note">
+            通过口令后显示歌词与歌曲列表。
+          </div>
+
+          <div class="lyrics-panel hidden" id="lyricsPanel" hidden style="display:none; visibility:hidden;">
             <div class="lyrics-title">歌词</div>
             <div id="lyricsContent" class="lyrics-plain">暂无歌词</div>
           </div>
@@ -305,9 +317,12 @@
       </div>
     </div>
 
-    <ul id="trackList" class="list hidden"></ul>
+    <ul id="trackList" class="list hidden" hidden style="display:none; visibility:hidden;"></ul>
   </div>
 
-  <script src="./app.js"></script>
+  <script src="./app.js?v=2"></script>
 </body>
 </html>
+
+
+
