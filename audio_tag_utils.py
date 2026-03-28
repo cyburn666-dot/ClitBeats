@@ -1,6 +1,7 @@
 from pathlib import Path
 from mutagen.id3 import ID3, APIC, error
 from mutagen.id3 import ID3, ID3NoHeaderError
+import core_utils
 
 
 def get_mime_type(image_path: Path) -> str:
@@ -64,7 +65,8 @@ def replace_cover(mp3_path: Path, supported_exts: list[str]) -> None:
     """
     cover_path = find_cover(mp3_path, supported_exts)
     if not cover_path:
-        print(f"[跳过] 未找到同名图片: {mp3_path.name}")
+        # print(f"[跳过] 未找到同名图片: {mp3_path.name}")
+        core_utils.Logs.done(f"未找到同名图片: {mp3_path.name}","跳过")
         return
 
     try:
@@ -74,10 +76,12 @@ def replace_cover(mp3_path: Path, supported_exts: list[str]) -> None:
 
         verify_tags = ID3(mp3_path)
         apic_list = verify_tags.getall("APIC")
-        print(f"[完成] {mp3_path.name} <- {cover_path.name}，封面数量: {len(apic_list)}")
-    except Exception as e:
-        print(f"[失败] {mp3_path.name}: {e}")
+        # print(f"[完成] {mp3_path.name} <- {cover_path.name}，封面数量: {len(apic_list)}")
+        core_utils.Logs.warning(f"{mp3_path.name} <- {cover_path.name}，封面数量: {len(apic_list)}","完成")
 
+    except Exception as e:
+        # print(f"[失败] {mp3_path.name}: {e}")
+        core_utils.Logs.error(f"{mp3_path.name}: {e}","失败")
 
 def collect_mp3_files(input_dir: Path) -> list[Path]:
     return list(input_dir.glob("*.mp3"))
@@ -90,7 +94,8 @@ def replace_all_mp3_covers(input_dir: Path, supported_exts: list[str]) -> None:
     mp3_files = collect_mp3_files(input_dir)
 
     if not mp3_files:
-        print("input 目录没有找到 mp3 文件")
+        # print("input 目录没有找到 mp3 文件")
+        core_utils.Logs.info(f"input 目录没有找到 mp3 文件")
         return
 
     for mp3_path in mp3_files:
@@ -103,7 +108,8 @@ def strip_embedded_cover(mp3_path: Path):
     try:
         tags = ID3(mp3_path)
     except ID3NoHeaderError:
-        print(f"[跳过] 无ID3标签: {mp3_path.name}")
+        # print(f"[跳过] 无ID3标签: {mp3_path.name}")
+        core_utils.Logs.done(f"无ID3标签: {mp3_path.name}","跳过")
         return False
 
     removed = False
@@ -114,13 +120,15 @@ def strip_embedded_cover(mp3_path: Path):
             removed = True
 
     if not removed:
-        print(f"[跳过] 无内嵌封面: {mp3_path.name}")
+        # print(f"[跳过] 无内嵌封面: {mp3_path.name}")
+        core_utils.Logs.done(f"无内嵌封面: {mp3_path.name}","跳过")
         return False
 
     # 只有真的修改了才保存
     tags.save(mp3_path)
 
-    print(f"[删除成功] 已删除MP3内嵌封面: {mp3_path.name}")
+    # print(f"[删除成功] 已删除MP3内嵌封面: {mp3_path.name}")
+    core_utils.Logs.warning(f"已删除MP3内嵌封面: {mp3_path.name}","删除成功")
     return True
 
 def strip_mp3_metadata(mp3_path: Path) -> bool:
@@ -129,18 +137,25 @@ def strip_mp3_metadata(mp3_path: Path) -> bool:
     try:
         tags = ID3(mp3_path)
     except ID3NoHeaderError:
-        print(f"[跳过] 无ID3标签: {mp3_path.name}")
+        core_utils.Logs.done(f"无ID3标签: {mp3_path.name}","跳过")
         return False
 
     if len(tags.keys()) == 0:
-        print(f"[跳过] 空ID3标签: {mp3_path.name}")
+        core_utils.Logs.done(f"空ID3标签: {mp3_path.name}","跳过")
         return False
 
     tags.delete(mp3_path)
-    print(f"[清理成功] 已删除全部MP3元数据: {mp3_path.name}")
+    # print(f"[清理成功] 已删除全部MP3元数据: {mp3_path.name}")
+    core_utils.Logs.warning(f"已删除全部MP3元数据: {mp3_path.name}","清理成功")
     return True
+
+
 
 def strip_all_embedded_metadata(input_dir: Path):
     mp3_files = collect_mp3_files(input_dir)
     for mp3_path in mp3_files:
+        #检查音频大小
+        status, logs = core_utils.FileSize.validate(mp3_path)
+        if logs != '':
+            core_utils.Logs.warning(logs)
         strip_mp3_metadata(mp3_path)

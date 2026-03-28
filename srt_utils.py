@@ -1,6 +1,7 @@
 from pathlib import Path
 import re
 import os
+import core_utils
 
 TIME_RE = re.compile(
     r"(\d{2}):(\d{2}):(\d{2}),(\d{3})\s*-->\s*(\d{2}):(\d{2}):(\d{2}),(\d{3})"
@@ -75,7 +76,8 @@ def convert_all_srt_to_lrc(input_dir: Path, output_dir: Path) -> None:
 
     srt_files = collect_srt_files(input_dir)
     if not srt_files:
-        print("input 目录没有找到 srt 文件")
+        # print("input 目录没有找到 srt 文件")
+        core_utils.Logs.info("input 目录没有找到 srt 文件")
         return
 
     for srt_path in srt_files:

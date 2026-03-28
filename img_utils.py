@@ -1,6 +1,6 @@
 from pathlib import Path
 from PIL import Image
-
+import core_utils
 
 def compress_image(image_path: Path, max_size: int = 512) -> None:
     """
@@ -32,7 +32,8 @@ def compress_image(image_path: Path, max_size: int = 512) -> None:
                 need_process = True
 
             if not need_process:
-                print(f"[跳过合格图片] {image_path.name}: {img.size}")
+                # print(f"[跳过合格图片] {image_path.name}: {img.size}")
+                core_utils.Logs.done(f"{image_path.name}: {img.size}","跳过合格图片")
             else:
                 # 处理EXIF方向
                 if orientation == 3:
@@ -56,10 +57,11 @@ def compress_image(image_path: Path, max_size: int = 512) -> None:
                 else:
                     raise ValueError(f"不支持的图片格式: {image_path}")
 
-                print(f"[图片处理] {image_path.name}: {original_size} -> {img.size}")
+                # print(f"[图片处理] {image_path.name}: {original_size} -> {img.size}")
+                core_utils.Logs.warning(f"{image_path.name}: {original_size} -> {img.size}","图片处理")
 
     except Exception as e:
-        print(f"[图片处理失败] {image_path.name}: {e}")
+        core_utils.Logs.error(f"{image_path.name}: {e}","图片处理失败")
 
 
 def preprocess_all_images(input_dir: Path, max_size: int = 512) -> None:
@@ -72,7 +74,8 @@ def preprocess_all_images(input_dir: Path, max_size: int = 512) -> None:
         image_files.extend(input_dir.glob(pattern))
 
     if not image_files:
-        print("未找到需要处理的图片")
+        # print("未找到需要处理的图片")
+        core_utils.Logs.info(f"未找到需要处理的图片")
         return
 
     for image_path in image_files:

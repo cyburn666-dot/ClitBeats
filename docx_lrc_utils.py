@@ -1,6 +1,6 @@
 from pathlib import Path
 from docx import Document
-
+import core_utils
 
 def collect_docx_files(input_dir: Path) -> list[Path]:
     """
@@ -48,9 +48,11 @@ def convert_docx_to_lrc(docx_path: Path, output_dir: Path) -> None:
         text = build_lrc_text(lines)
         output_path = get_output_lrc_path(docx_path, output_dir)
         write_text_file(output_path, text)
-        print(f"[歌词转换] {docx_path.name} -> {output_path.name}")
+        # print(f"[歌词转换] {docx_path.name} -> {output_path.name}")
+        core_utils.Logs.warning(f'{docx_path.name} -> {output_path.name}','歌词转换')
     except Exception as e:
-        print(f"[歌词转换失败] {docx_path.name}: {e}")
+        # print(f"[歌词转换失败] {docx_path.name}: {e}")
+        core_utils.Logs.error(f'{docx_path.name}: {e}','歌词转换失败')
 
 
 def convert_all_docx_to_lrc(input_dir: Path, output_dir: Path) -> None:
@@ -61,7 +63,8 @@ def convert_all_docx_to_lrc(input_dir: Path, output_dir: Path) -> None:
 
     docx_files = collect_docx_files(input_dir)
     if not docx_files:
-        print("input 目录没有找到 docx 文件")
+        # print("input 目录没有找到 docx 文件")
+        core_utils.Logs.info(f'input 目录没有找到 docx 文件')
         return
 
     for docx_path in docx_files:
