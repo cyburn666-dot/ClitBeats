@@ -382,6 +382,26 @@
       "mime": "audio/mpeg"
     },
     {
+      "id": "t067",
+      "stem": "月轮",
+      "title": "月轮",
+      "has_lrc": true,
+      "has_txt": false,
+      "has_cover": true,
+      "segment_count": 2,
+      "mime": "audio/mpeg"
+    },
+    {
+      "id": "t068",
+      "stem": "月轮-演唱会版",
+      "title": "月轮-演唱会版",
+      "has_lrc": true,
+      "has_txt": false,
+      "has_cover": true,
+      "segment_count": 3,
+      "mime": "audio/mpeg"
+    },
+    {
       "id": "t030",
       "stem": "来日不方长",
       "title": "来日不方长",

@@ -3,11 +3,12 @@ from __future__ import annotations
 import argparse
 import base64
 import hashlib
+import shutil
 import json
 import secrets
 from pathlib import Path
 from typing import Optional
-
+import core_utils
 
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
@@ -304,18 +305,18 @@ def pack_audio_segments(source_path: Path) -> dict:
 
 def reuse_or_pack_single_asset(existing_asset: Optional[dict], source_path: Optional[Path]) -> Optional[dict]:
     if source_path is None:
-        return None
+        return None, False
     new_hash = sha256_file(source_path)
     if existing_asset and existing_asset.get("source_hash") == new_hash:
-        return existing_asset
-    return pack_single_asset(source_path)
+        return existing_asset, False
+    return pack_single_asset(source_path), True
 
 
-def reuse_or_pack_audio(existing_audio: Optional[dict], source_path: Path) -> dict:
+def reuse_or_pack_audio(existing_audio: Optional[dict], source_path: Path):
     new_hash = sha256_file(source_path)
     if existing_audio and existing_audio.get("source_hash") == new_hash:
-        return existing_audio
-    return pack_audio_segments(source_path)
+        return existing_audio, False
+    return pack_audio_segments(source_path), True
 
 
 def build_library(password: str) -> None:
@@ -334,6 +335,8 @@ def build_library(password: str) -> None:
     new_catalog_tracks: list[dict] = []
     new_tracks_payload: dict[str, dict] = {}
     used_asset_files: set[str] = set()
+
+    added_assets = []
 
     for stem in sorted(groups.keys()):
         stem_files = groups[stem]
@@ -356,10 +359,15 @@ def build_library(password: str) -> None:
         txt_path = stem_files.get(".txt")
         cover_path = find_cover_for_stem(stem)
 
-        audio_asset = reuse_or_pack_audio(old_track_payload.get("audio"), audio_path)
-        lrc_asset = reuse_or_pack_single_asset(old_track_payload.get("lrc"), lrc_path)
-        txt_asset = reuse_or_pack_single_asset(old_track_payload.get("txt"), txt_path)
-        cover_asset = reuse_or_pack_single_asset(old_track_payload.get("cover"), cover_path)
+        audio_asset, packNew = reuse_or_pack_audio(old_track_payload.get("audio"), audio_path)
+        lrc_asset, packNewLrc = reuse_or_pack_single_asset(old_track_payload.get("lrc"), lrc_path)
+        txt_asset, packNewTxt = reuse_or_pack_single_asset(old_track_payload.get("txt"), txt_path)
+        cover_asset, packNewCover = reuse_or_pack_single_asset(old_track_payload.get("cover"), cover_path)
+
+        if packNew: added_assets.append(audio_path)
+        if packNewLrc: added_assets.append(lrc_path)
+        if packNewTxt: added_assets.append(txt_path)
+        if packNewCover: added_assets.append(cover_path)
 
         new_catalog_tracks.append({
             "id": track_id,
@@ -405,7 +413,13 @@ def build_library(password: str) -> None:
 
     cleanup_unused_assets(used_asset_files)
 
-    print(f"已生成 {len(new_catalog_tracks)} 首")
+    for trk in added_assets:
+        core_utils.Logs.done(f"新增入库资产：{trk}")
+        targetpath = str(trk).replace("input","output")
+        shutil.copy(trk,targetpath)
+        core_utils.Logs.info(f"已备份至临时输出目录：{targetpath}")
+
+    core_utils.Logs.done(f"已生成 {len(new_catalog_tracks)} 首")
     print(f"catalog: {CATALOG_PATH}")
     print(f"manifest: {MANIFEST_SEC_PATH}")
     print(f"assets: {ASSETS_DIR}")
