@@ -442,6 +442,16 @@
       "mime": "audio/mpeg"
     },
     {
+      "id": "t064",
+      "stem": "致在成长的龙",
+      "title": "致在成长的龙",
+      "has_lrc": true,
+      "has_txt": false,
+      "has_cover": true,
+      "segment_count": 3,
+      "mime": "audio/mpeg"
+    },
+    {
       "id": "t026",
       "stem": "长路寒霜凛",
       "title": "长路寒霜凛",
