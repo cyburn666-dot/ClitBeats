@@ -402,6 +402,16 @@
       "mime": "audio/mpeg"
     },
     {
+      "id": "t065",
+      "stem": "水流在传诵-标准版",
+      "title": "水流在传诵-标准版",
+      "has_lrc": true,
+      "has_txt": false,
+      "has_cover": false,
+      "segment_count": 3,
+      "mime": "audio/mpeg"
+    },
+    {
       "id": "t037",
       "stem": "潮汐日",
       "title": "潮汐日",
