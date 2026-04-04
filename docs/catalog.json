@@ -82,6 +82,16 @@
       "mime": "audio/mpeg"
     },
     {
+      "id": "t062",
+      "stem": "世界的形状-Pro",
+      "title": "世界的形状-Pro",
+      "has_lrc": true,
+      "has_txt": false,
+      "has_cover": false,
+      "segment_count": 4,
+      "mime": "audio/mpeg"
+    },
+    {
       "id": "t020",
       "stem": "刀笔续雌篇-史诗",
       "title": "刀笔续雌篇-史诗",
@@ -128,6 +138,16 @@
       "has_lrc": false,
       "has_txt": true,
       "has_cover": false,
+      "segment_count": 3,
+      "mime": "audio/mpeg"
+    },
+    {
+      "id": "t063",
+      "stem": "即时春",
+      "title": "即时春",
+      "has_lrc": false,
+      "has_txt": false,
+      "has_cover": true,
       "segment_count": 3,
       "mime": "audio/mpeg"
     },
